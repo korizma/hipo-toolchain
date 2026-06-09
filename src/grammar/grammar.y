@@ -1,8 +1,36 @@
 
 
 %{
-
+#include "../asm/code.h"
+#include "helper.c"
+int yylex(void);
+void yyerror(const char *message);
 %}
+
+%union {
+    int literal;
+    char* reg;
+    char* symbol;
+    char* string;
+
+    asm_line* line;
+    operand_jmp o_jmp;
+    operand_ls o_ls;
+    sym_or_lit* sym_lit_list;
+    gpr_pair gprs;
+}
+
+%token <literal> LITERAL
+%token <symbol> SYMBOL
+%token <string> STRING
+%token <reg> GPRX
+%token <reg> CSRX
+
+%type <o_jmp> operandJmp
+%type <o_ls> operandLS
+%type <gprs> grp_12
+%type <line> asm_directives 
+%type <line> asm_instructions
 
     /* Deklaracije */
 
@@ -57,7 +85,30 @@ expr:
         ;
 
 asm_instructions:
-        HALT | INT | IRET | RET 
+        HALT {
+                asm_line* line = new_empty_line(); 
+                line.is_instruction = true; 
+                line.operation = "halt"; 
+                add_line(line);        
+            }
+    |   INT {
+                asm_line* line = new_empty_line(); 
+                line.is_instruction = true; 
+                line.operation = "int"; 
+                add_line(line);        
+            }
+    |   IRET {
+                asm_line* line = new_empty_line(); 
+                line.is_instruction = true; 
+                line.operation = "iret"; 
+                add_line(line);        
+            }
+    |   RET {
+                asm_line* line = new_empty_line(); 
+                line.is_instruction = true; 
+                line.operation = "ret"; 
+                add_line(line);        
+            }
     |   CALL operandJmp
     |   JMP operandJmp
     |   branchOp gpr_12 COMMA operandJmp
@@ -70,15 +121,15 @@ asm_instructions:
     |   CSRWR gpr_1 COMMA csr_1
 
 gpr_12:
-    PERCENT GPRX COMMA PERCENT GPRX
+    PERCENT GPRX COMMA PERCENT GPRX {$$.reg1 = $2}
     ;
 
 gpr_1:
-    PERCENT GPRX
+    PERCENT GPRX {$$ = $2}
     ;
 
 csr_1:
-    PERCENT CSRX
+    PERCENT CSRX {$$ = $2}
     ;
 
 branchOp:

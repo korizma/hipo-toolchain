@@ -68,7 +68,7 @@ COMMENT #.*\n
 %%
     /* Pravila */
 
-[\t\r ]+ return ;
+[\t\r ]+ ;
 \n       return NEWLINE;
 "."      return DOT;
 ","      return COMMA;
@@ -117,9 +117,9 @@ COMMENT #.*\n
 {GPRX}    return GPRX;
 {CSRX}    return CSRX;
 {COMMENT} return COMMENT;
-{STRING}  return STRING;
-{LITERAL}  return LITERAL;
-{SYMBOL}  return SYMBOL;
+{STRING}  {yyval.string = strdup(yytext); return STRING;}
+{LITERAL} {yylval.literal = atoi(yytext); return LITERAL;}
+{SYMBOL}  {yyval.symbol = strdup(yytext); return SYMBOL;}
 
 %%
 /* C kod*/

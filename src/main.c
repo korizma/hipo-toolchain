@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include "asm/code.h"
 
 #include "grammar/grammar.tab.h"
 
@@ -24,6 +25,9 @@ static void print_source_with_line_numbers(const char *source)
         }
     }
 }
+
+asm_line lines[1024];
+int curr_line = 0;
 
 int main(void)
 {

@@ -1,3 +1,6 @@
 src/grammar/grammar.tab.c
 src/grammar/grammar.tab.h
 src/grammar/lex.yy.c
+.codex
+.agents
+ss
