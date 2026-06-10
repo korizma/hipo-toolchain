@@ -2,7 +2,7 @@
 
 %{
 #include "../asm/code.h"
-#include "helper.c"
+#include "helper.h"
 int yylex(void);
 void yyerror(const char *message);
 %}

@@ -1,6 +1,6 @@
 obj_folder="bin"
 
-c_files="src/main.c src/grammar/lex.yy.c src/grammar/grammar.tab.c src/asm/code.c"
+c_files="src/main.c src/grammar/*.c src/asm/*.c"
 output_file="ss"
 
 lexer="src/grammar/lexer.l"
