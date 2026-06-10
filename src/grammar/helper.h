@@ -43,4 +43,6 @@ void reverse_arr_sym(list_n_s* list);
 
 int parse_literal_lex(char* lit);
 
+void yyerror(const char *message);
+
 #endif

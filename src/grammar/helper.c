@@ -2,6 +2,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "helper.h"
+#include "stdio.h"
 
 extern asm_line* lines[];
 extern int curr_line;
@@ -146,3 +147,9 @@ int parse_literal_lex(char* lit) {
         return atoi(lit);
     return (int)strtol(lit+2, NULL, 16);
 }
+
+void yyerror(const char *message)
+{
+    fprintf(stderr, "Parser error: %s\n", message);
+}
+

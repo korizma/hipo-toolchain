@@ -6,7 +6,6 @@
 extern FILE *yyin;
 
 int yylex_destroy(void);
-void yyerror(const char *message);
 
 asm_line* lines[1024];
 int curr_line = 0;
@@ -39,9 +38,4 @@ int main(int argc, char **argv)
     }
 
     return 0;
-}
-
-void yyerror(const char *message)
-{
-    fprintf(stderr, "Parser error: %s\n", message);
 }
