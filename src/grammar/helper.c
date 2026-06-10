@@ -48,29 +48,29 @@ void add_line(asm_line* line)
     lines[curr_line++] = line;
 }
 
-int reg_to_int(char* reg)
+asm_register reg_from_name(char* reg)
 {
     if (strcmp(reg, "handler") == 0)
     {
-        return -1;
+        return ASM_REG_HANDLER;
     }
     if (strcmp(reg, "status") == 0)
     {
-        return -2;
+        return ASM_REG_STATUS;
     }
     if (strcmp(reg, "cause") == 0)
     {
-        return -3;
+        return ASM_REG_CAUSE;
     }
     if (strcmp(reg, "sp") == 0)
     {
-        return 14;
+        return ASM_REG_SP;
     }
     if (strcmp(reg, "pc") == 0)
     {
-        return 15;
+        return ASM_REG_PC;
     }
-    return atoi(reg + 1);
+    return (asm_register)atoi(reg + 1);
 }
 
 void allocate_n_more_sym_list(list_n_s* list, int n_more)
@@ -152,4 +152,3 @@ void yyerror(const char *message)
 {
     fprintf(stderr, "Parser error: %s\n", message);
 }
-

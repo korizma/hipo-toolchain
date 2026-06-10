@@ -6,22 +6,6 @@ handlers_arr h_arr;
 
 static section* current_section = NULL;
 
-static char* copy_string(char* string)
-{
-    if (string == NULL) {
-        return NULL;
-    }
-
-    size_t len = strlen(string) + 1;
-    char* copy = (char*)malloc(len);
-
-    if (copy != NULL) {
-        memcpy(copy, string, len);
-    }
-
-    return copy;
-}
-
 static section* find_section(char* name)
 {
     if (name == NULL) {
@@ -41,30 +25,45 @@ static section* find_section(char* name)
 void init_handler_arr()
 {
     h_arr.size = HANDLERS_START_SIZE;
-    h_arr.names = (char**)malloc(sizeof(char*)*h_arr.size);
-    h_arr.handlers = (handler_f*)malloc(sizeof(handler_f) * h_arr.size);
+    h_arr.entries = (handler_entry*)malloc(sizeof(handler_entry) * h_arr.size);
     h_arr.next_avail = 0;
 }
 
-void register_handler(handler_f handler, char* name)
+static void register_handler_entry(handler_entry entry)
 {
-    if (handler == NULL || name == NULL) {
+    if (entry.handler == NULL) {
         return;
     }
 
-    if (h_arr.handlers == NULL || h_arr.names == NULL || h_arr.size == 0) {
+    if (h_arr.entries == NULL || h_arr.size == 0) {
         init_handler_arr();
     }
 
     if (h_arr.next_avail == h_arr.size) {
         h_arr.size += HANDLERS_INCREASE_SIZE;
-        h_arr.names = (char**)realloc(h_arr.names, sizeof(char*) * h_arr.size);
-        h_arr.handlers = (handler_f*)realloc(h_arr.handlers, sizeof(handler_f) * h_arr.size);
+        h_arr.entries = (handler_entry*)realloc(h_arr.entries, sizeof(handler_entry) * h_arr.size);
     }
 
-    h_arr.names[h_arr.next_avail] = copy_string(name);
-    h_arr.handlers[h_arr.next_avail] = handler;
+    h_arr.entries[h_arr.next_avail] = entry;
     h_arr.next_avail++;
+}
+
+void register_label_handler(handler_f handler)
+{
+    handler_entry entry = {HANDLER_LABEL, ASM_INSTR_NONE, ASM_DIR_NONE, handler};
+    register_handler_entry(entry);
+}
+
+void register_instruction_handler(handler_f handler, asm_instruction instruction)
+{
+    handler_entry entry = {HANDLER_INSTRUCTION, instruction, ASM_DIR_NONE, handler};
+    register_handler_entry(entry);
+}
+
+void register_directive_handler(handler_f handler, asm_directive directive)
+{
+    handler_entry entry = {HANDLER_DIRECTIVE, ASM_INSTR_NONE, directive, handler};
+    register_handler_entry(entry);
 }
 
 void handle_line(asm_line* line)
@@ -77,8 +76,7 @@ void handle_line(asm_line* line)
         init_program();
     }
 
-    if (line->is_directive && line->operation != NULL &&
-        strcmp(line->operation, "section") == 0) {
+    if (line->is_directive && line->directive == ASM_DIR_SECTION) {
         current_section = find_section(line->section_name);
 
         if (current_section == NULL) {
@@ -87,15 +85,15 @@ void handle_line(asm_line* line)
         }
     }
 
-    char* name = line->is_label ? "label" : line->operation;
-
-    if (name == NULL) {
-        return;
-    }
-
     for (int i = 0; i < h_arr.next_avail; i++) {
-        if (h_arr.names[i] != NULL && strcmp(h_arr.names[i], name) == 0) {
-            h_arr.handlers[i](line, current_section);
+        handler_entry* entry = &h_arr.entries[i];
+
+        if ((entry->kind == HANDLER_LABEL && line->is_label) ||
+            (entry->kind == HANDLER_INSTRUCTION && line->is_instruction &&
+             entry->instruction == line->instruction) ||
+            (entry->kind == HANDLER_DIRECTIVE && line->is_directive &&
+             entry->directive == line->directive)) {
+            entry->handler(line, current_section);
             return;
         }
     }

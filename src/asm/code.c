@@ -1,22 +1,73 @@
 #include "code.h"
 
 #include <stdio.h>
-#include <string.h>
 
-static void print_reg(int reg)
+const char* asm_instruction_name(asm_instruction instruction)
 {
-    if (reg == 14) {
-        printf("%%sp");
-    } else if (reg == 15) {
-        printf("%%pc");
-    } else if (reg >= 0) {
-        printf("%%r%d", reg);
-    } else if (reg == -1) {
+    switch (instruction) {
+    case ASM_INSTR_HALT: return "halt";
+    case ASM_INSTR_INT: return "int";
+    case ASM_INSTR_IRET: return "iret";
+    case ASM_INSTR_CALL: return "call";
+    case ASM_INSTR_RET: return "ret";
+    case ASM_INSTR_JMP: return "jmp";
+    case ASM_INSTR_BEQ: return "beq";
+    case ASM_INSTR_BNE: return "bne";
+    case ASM_INSTR_BGT: return "bgt";
+    case ASM_INSTR_PUSH: return "push";
+    case ASM_INSTR_POP: return "pop";
+    case ASM_INSTR_XCHG: return "xchg";
+    case ASM_INSTR_ADD: return "add";
+    case ASM_INSTR_SUB: return "sub";
+    case ASM_INSTR_MUL: return "mul";
+    case ASM_INSTR_DIV: return "div";
+    case ASM_INSTR_NOT: return "not";
+    case ASM_INSTR_AND: return "and";
+    case ASM_INSTR_OR: return "or";
+    case ASM_INSTR_XOR: return "xor";
+    case ASM_INSTR_SHL: return "shl";
+    case ASM_INSTR_SHR: return "shr";
+    case ASM_INSTR_LD: return "ld";
+    case ASM_INSTR_ST: return "st";
+    case ASM_INSTR_CSRRD: return "csrrd";
+    case ASM_INSTR_CSRWR: return "csrwr";
+    case ASM_INSTR_NONE: return NULL;
+    }
+
+    return NULL;
+}
+
+const char* asm_directive_name(asm_directive directive)
+{
+    switch (directive) {
+    case ASM_DIR_GLOBAL: return "global";
+    case ASM_DIR_EXTERN: return "extern";
+    case ASM_DIR_SECTION: return "section";
+    case ASM_DIR_WORD: return "word";
+    case ASM_DIR_SKIP: return "skip";
+    case ASM_DIR_ASCII: return "ascii";
+    case ASM_DIR_EQU: return "equ";
+    case ASM_DIR_END: return "end";
+    case ASM_DIR_NONE: return NULL;
+    }
+
+    return NULL;
+}
+
+static void print_reg(asm_register reg)
+{
+    if (reg == ASM_REG_HANDLER) {
         printf("%%handler");
-    } else if (reg == -2) {
+    } else if (reg == ASM_REG_STATUS) {
         printf("%%status");
-    } else if (reg == -3) {
+    } else if (reg == ASM_REG_CAUSE) {
         printf("%%cause");
+    } else if (reg == ASM_REG_SP) {
+        printf("%%sp");
+    } else if (reg == ASM_REG_PC) {
+        printf("%%pc");
+    } else if (reg >= ASM_REG_R0 && reg <= ASM_REG_R15) {
+        printf("%%r%d", reg);
     } else {
         printf("%%?<%d>", reg);
     }
@@ -139,23 +190,26 @@ void print_asm_line(asm_line* line)
     }
 
     if (line->is_directive) {
-        const char* op = line->operation ? line->operation : "<missing directive>";
+        const char* op = asm_directive_name(line->directive);
+        if (op == NULL) {
+            op = "<missing directive>";
+        }
 
         printf(".%s", op);
 
-        if (strcmp(op, "global") == 0 || strcmp(op, "extern") == 0) {
+        if (line->directive == ASM_DIR_GLOBAL || line->directive == ASM_DIR_EXTERN) {
             printf(" ");
             print_symbol_list(line->symbol_list, line->symbol_list_n);
-        } else if (strcmp(op, "section") == 0) {
+        } else if (line->directive == ASM_DIR_SECTION) {
             printf(" %s", line->section_name ? line->section_name : "<missing section>");
-        } else if (strcmp(op, "word") == 0) {
+        } else if (line->directive == ASM_DIR_WORD) {
             printf(" ");
             print_sym_or_lit_list(line->sym_or_lit_list, line->sym_or_lit_list_n);
-        } else if (strcmp(op, "skip") == 0) {
+        } else if (line->directive == ASM_DIR_SKIP) {
             printf(" %d", line->byte_num);
-        } else if (strcmp(op, "ascii") == 0) {
+        } else if (line->directive == ASM_DIR_ASCII) {
             printf(" %s", line->ascii_string ? line->ascii_string : "<missing string>");
-        } else if (strcmp(op, "equ") == 0) {
+        } else if (line->directive == ASM_DIR_EQU) {
             printf(" %s, ", line->new_symbol ? line->new_symbol : "<missing symbol>");
             print_expr(&line->expression);
         }
@@ -165,50 +219,60 @@ void print_asm_line(asm_line* line)
     }
 
     if (line->is_instruction) {
-        const char* op = line->operation ? line->operation : "<missing instruction>";
+        const char* op = asm_instruction_name(line->instruction);
+        if (op == NULL) {
+            op = "<missing instruction>";
+        }
 
         printf("%s", op);
 
-        if (strcmp(op, "call") == 0 || strcmp(op, "jmp") == 0) {
+        if (line->instruction == ASM_INSTR_CALL || line->instruction == ASM_INSTR_JMP) {
             printf(" ");
             print_jmp_operand(&line->o_jmp);
-        } else if (strcmp(op, "beq") == 0 || strcmp(op, "bne") == 0 ||
-                   strcmp(op, "bgt") == 0) {
+        } else if (line->instruction == ASM_INSTR_BEQ ||
+                   line->instruction == ASM_INSTR_BNE ||
+                   line->instruction == ASM_INSTR_BGT) {
             printf(" ");
             print_reg(line->reg1);
             printf(", ");
             print_reg(line->reg2);
             printf(", ");
             print_jmp_operand(&line->o_jmp);
-        } else if (strcmp(op, "push") == 0 || strcmp(op, "pop") == 0 ||
-                   strcmp(op, "not") == 0) {
+        } else if (line->instruction == ASM_INSTR_PUSH ||
+                   line->instruction == ASM_INSTR_POP ||
+                   line->instruction == ASM_INSTR_NOT) {
             printf(" ");
             print_reg(line->reg1);
-        } else if (strcmp(op, "xchg") == 0 || strcmp(op, "add") == 0 ||
-                   strcmp(op, "sub") == 0 || strcmp(op, "mul") == 0 ||
-                   strcmp(op, "div") == 0 || strcmp(op, "and") == 0 ||
-                   strcmp(op, "or") == 0 || strcmp(op, "xor") == 0 ||
-                   strcmp(op, "shl") == 0 || strcmp(op, "shr") == 0) {
+        } else if (line->instruction == ASM_INSTR_XCHG ||
+                   line->instruction == ASM_INSTR_ADD ||
+                   line->instruction == ASM_INSTR_SUB ||
+                   line->instruction == ASM_INSTR_MUL ||
+                   line->instruction == ASM_INSTR_DIV ||
+                   line->instruction == ASM_INSTR_AND ||
+                   line->instruction == ASM_INSTR_OR ||
+                   line->instruction == ASM_INSTR_XOR ||
+                   line->instruction == ASM_INSTR_SHL ||
+                   line->instruction == ASM_INSTR_SHR) {
             printf(" ");
             print_reg(line->reg1);
             printf(", ");
             print_reg(line->reg2);
-        } else if (strcmp(op, "ld") == 0) {
+        } else if (line->instruction == ASM_INSTR_LD) {
             printf(" ");
             print_ls_operand(&line->o_ls);
             printf(", ");
             print_reg(line->reg1);
-        } else if (strcmp(op, "st") == 0) {
+        } else if (line->instruction == ASM_INSTR_ST) {
             printf(" ");
             print_reg(line->reg1);
             printf(", ");
             print_ls_operand(&line->o_ls);
-        } else if (strcmp(op, "csrrd") == 0) {
+        } else if (line->instruction == ASM_INSTR_CSRRD) {
             printf(" ");
             print_reg(line->reg1);
             printf(", ");
             print_reg(line->reg2);
-        } else if (strcmp(op, "csrwr") == 0) {
+        } else if (line->instruction == ASM_INSTR_CSRWR) {
             printf(" ");
             print_reg(line->reg1);
             printf(", ");

@@ -6,8 +6,8 @@
 #include "string.h"
 
 typedef struct {
-    char* reg1;
-    char* reg2;
+    asm_register reg1;
+    asm_register reg2;
 } gpr_pair;
 
 typedef struct {
@@ -27,7 +27,7 @@ expr* expr_binary(expr_kind kind, expr* left, expr* right);
 asm_line* new_empty_line(void);
 void add_line(asm_line* line);
 
-int reg_to_int(char* reg);
+asm_register reg_from_name(char* reg);
 
 void allocate_n_more_sym_list(list_n_s* list, int n_more);
 void allocate_n_more_sl_list(list_n_sl* list, int n_more);

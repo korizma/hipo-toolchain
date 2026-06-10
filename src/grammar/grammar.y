@@ -18,8 +18,8 @@ void yyerror(const char *message);
     char* reg;
     char* symbol;
     char* string;
-    char* opB;
-    char* gprC;
+    asm_instruction opB;
+    asm_register gprC;
 
     asm_line* line;
     operand_jmp o_jmp;
@@ -94,7 +94,7 @@ asm_directives:
         GLOBAL symbol_list {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "global"; 
+                line->directive = ASM_DIR_GLOBAL;
                 reverse_arr_sym(&$2);
                 line->symbol_list = $2.arr;
                 line->symbol_list_n = $2.n;
@@ -103,7 +103,7 @@ asm_directives:
     |   EXTERN symbol_list {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "extern";  
+                line->directive = ASM_DIR_EXTERN;
                 reverse_arr_sym(&$2);
                 line->symbol_list = $2.arr;
                 line->symbol_list_n = $2.n;
@@ -112,14 +112,14 @@ asm_directives:
     |   SECTION symbol_name {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "section";  
+                line->directive = ASM_DIR_SECTION;
                 line->section_name = $2;
                 add_line(line);        
             }
     |   WORD sym_lit_list {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "word";  
+                line->directive = ASM_DIR_WORD;
                 reverse_arr_sl(&$2);
                 line->sym_or_lit_list = $2.arr;
                 line->sym_or_lit_list_n = $2.n;
@@ -128,21 +128,21 @@ asm_directives:
     |   SKIP LITERAL {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "skip";
+                line->directive = ASM_DIR_SKIP;
                 line->byte_num = $2;
                 add_line(line);        
             }
     |   ASCII STRING {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "ascii";
+                line->directive = ASM_DIR_ASCII;
                 line->ascii_string = $2;
                 add_line(line);        
             }
     |   EQU symbol_name COMMA expr {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "equ";
+                line->directive = ASM_DIR_EQU;
                 line->new_symbol = $2;
                 line->expression = $4;
                 add_line(line);        
@@ -150,7 +150,7 @@ asm_directives:
     |   END {
                 asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
-                line->operation = "end";
+                line->directive = ASM_DIR_END;
                 add_line(line);        
             }
     ;
@@ -280,141 +280,141 @@ asm_instructions:
         HALT {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "halt"; 
+                line->instruction = ASM_INSTR_HALT;
                 add_line(line);        
             }
     |   INT {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "int"; 
+                line->instruction = ASM_INSTR_INT;
                 add_line(line);        
             }
     |   IRET {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "iret"; 
+                line->instruction = ASM_INSTR_IRET;
                 add_line(line);        
             }
     |   RET {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "ret"; 
+                line->instruction = ASM_INSTR_RET;
                 add_line(line);        
             }
     |   CALL operandJmp {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "call"; 
+                line->instruction = ASM_INSTR_CALL;
                 line->o_jmp = $2;
                 add_line(line);      
             }
     |   JMP operandJmp {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "jmp"; 
+                line->instruction = ASM_INSTR_JMP;
                 line->o_jmp = $2;
                 add_line(line);      
             }
     |   branchOp gpr_12 COMMA operandJmp {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = $1;
-                line->reg1 = reg_to_int($2.reg1);
-                line->reg2 = reg_to_int($2.reg2);
+                line->instruction = $1;
+                line->reg1 = $2.reg1;
+                line->reg2 = $2.reg2;
                 line->o_jmp = $4;
                 add_line(line);      
             }
     |   PUSH gpr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "push"; 
-                line->reg1 = reg_to_int($2);
+                line->instruction = ASM_INSTR_PUSH;
+                line->reg1 = $2;
                 add_line(line);      
             }
     |   POP gpr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "pop"; 
-                line->reg1 = reg_to_int($2);
+                line->instruction = ASM_INSTR_POP;
+                line->reg1 = $2;
                 add_line(line);      
             }
     |   NOT gpr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "not"; 
-                line->reg1 = reg_to_int($2);
+                line->instruction = ASM_INSTR_NOT;
+                line->reg1 = $2;
                 add_line(line);      
             }
     |   arithmethicOp gpr_12 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = $1; 
-                line->reg1 = reg_to_int($2.reg1);
-                line->reg2 = reg_to_int($2.reg2);
+                line->instruction = $1;
+                line->reg1 = $2.reg1;
+                line->reg2 = $2.reg2;
                 add_line(line);      
             }
     |   LD operandLS COMMA gpr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "ld"; 
-                line->reg1 = reg_to_int($4);
+                line->instruction = ASM_INSTR_LD;
+                line->reg1 = $4;
                 line->o_ls = $2;
                 add_line(line);      
             }
     |   ST gpr_1 COMMA operandLS {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "st"; 
-                line->reg1 = reg_to_int($2);
+                line->instruction = ASM_INSTR_ST;
+                line->reg1 = $2;
                 line->o_ls = $4;
                 add_line(line);      
             }
     |   CSRRD csr_1 COMMA gpr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "csrrd"; 
-                line->reg1 = reg_to_int($2);
-                line->reg2 = reg_to_int($4);
+                line->instruction = ASM_INSTR_CSRRD;
+                line->reg1 = $2;
+                line->reg2 = $4;
                 add_line(line);      
             }
     |   CSRWR gpr_1 COMMA csr_1 {
                 asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
-                line->operation = "csrwr"; 
-                line->reg1 = reg_to_int($2);
-                line->reg2 = reg_to_int($4);
+                line->instruction = ASM_INSTR_CSRWR;
+                line->reg1 = $2;
+                line->reg2 = $4;
                 add_line(line);      
             }
 
 gpr_12:
-    PERCENT GPRX COMMA PERCENT GPRX {$$.reg1 = $2; $$.reg2 = $5;}
+    PERCENT GPRX COMMA PERCENT GPRX {$$.reg1 = reg_from_name($2); $$.reg2 = reg_from_name($5);}
     ;
 
 gpr_1:
-    PERCENT GPRX {$$ = $2;}
+    PERCENT GPRX {$$ = reg_from_name($2);}
     ;
 
 csr_1:
-    PERCENT CSRX {$$ = $2;}
+    PERCENT CSRX {$$ = reg_from_name($2);}
     ;
 
 branchOp:
-        BNE {$$ = "bne";}
-    |   BEQ {$$ = "beq";}
-    |   BGT {$$ = "bgt";}
+        BNE {$$ = ASM_INSTR_BNE;}
+    |   BEQ {$$ = ASM_INSTR_BEQ;}
+    |   BGT {$$ = ASM_INSTR_BGT;}
     ;
 
 arithmethicOp:
-        XCHG {$$ = "xchg";}
-    |   ADD {$$ = "add";}
-    |   SUB {$$ = "sub";}
-    |   MUL {$$ = "mul";}
-    |   DIV {$$ = "div";}
-    |   AND {$$ = "and";}
-    |   OR {$$ = "or";}
-    |   XOR {$$ = "xor";}
-    |   SHL {$$ = "shl";}
-    |   SHR {$$ = "shr";}
+        XCHG {$$ = ASM_INSTR_XCHG;}
+    |   ADD {$$ = ASM_INSTR_ADD;}
+    |   SUB {$$ = ASM_INSTR_SUB;}
+    |   MUL {$$ = ASM_INSTR_MUL;}
+    |   DIV {$$ = ASM_INSTR_DIV;}
+    |   AND {$$ = ASM_INSTR_AND;}
+    |   OR {$$ = ASM_INSTR_OR;}
+    |   XOR {$$ = ASM_INSTR_XOR;}
+    |   SHL {$$ = ASM_INSTR_SHL;}
+    |   SHR {$$ = ASM_INSTR_SHR;}
     ;
 
 operandJmp:
@@ -457,45 +457,45 @@ operandLS:
     |   PERCENT GPRX {
             $$.has_percent = true;
             $$.has_symbol = $$.has_brackets = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($2);
+            $$.reg = reg_from_name($2);
         }
     |   PERCENT CSRX {
             $$.has_percent = true;
             $$.has_symbol = $$.has_brackets = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($2);
+            $$.reg = reg_from_name($2);
         }
     |   RBRACK PERCENT GPRX LBRACK {
             $$.has_percent = $$.has_brackets = true;
             $$.has_symbol = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
         }
     |   RBRACK PERCENT CSRX LBRACK {
             $$.has_percent = $$.has_brackets = true;
             $$.has_symbol = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
         }
     |   RBRACK PERCENT GPRX PLUS LITERAL LBRACK {
             $$.has_percent = $$.has_brackets = $$.has_literal = true;
             $$.has_symbol = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
             $$.literal = $5;
         }
     |   RBRACK PERCENT CSRX PLUS LITERAL LBRACK {
             $$.has_percent = $$.has_brackets = $$.has_literal = true;
             $$.has_symbol = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
             $$.literal = $5;
         }
     |   RBRACK PERCENT GPRX PLUS symbol_name LBRACK {
             $$.has_percent = $$.has_brackets = $$.has_symbol = true;
             $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
             $$.symbol = $5;
         }
     |   RBRACK PERCENT CSRX PLUS symbol_name LBRACK {
             $$.has_percent = $$.has_brackets = $$.has_symbol = true;
             $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_to_int($3);
+            $$.reg = reg_from_name($3);
             $$.symbol = $5;
         }
     ;
