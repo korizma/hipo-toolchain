@@ -3,52 +3,40 @@
 
 #include "grammar/grammar.tab.h"
 
-typedef struct yy_buffer_state *YY_BUFFER_STATE;
+extern FILE *yyin;
 
-YY_BUFFER_STATE yy_scan_string(const char *yy_str);
-void yy_delete_buffer(YY_BUFFER_STATE buffer);
 int yylex_destroy(void);
 void yyerror(const char *message);
 
-static void print_source_with_line_numbers(const char *source)
-{
-    int line = 1;
-
-    printf("Input assembly:\n");
-    printf("%3d | ", line);
-
-    for (const char *current = source; *current != '\0'; ++current) {
-        putchar(*current);
-
-        if (*current == '\n' && current[1] != '\0') {
-            printf("%3d | ", ++line);
-        }
-    }
-}
-
-asm_line lines[1024];
+asm_line* lines[1024];
 int curr_line = 0;
 
-int main(void)
+int main(int argc, char **argv)
 {
-    const char *source =
-        "halt\n"
-        "int\n"
-        "iret\n"
-        "ret\n";
-
-    YY_BUFFER_STATE buffer = yy_scan_string(source);
-
-    print_source_with_line_numbers(source);
-
-    if (yyparse() == 0) {
-        printf("\nParse succeeded.\n");
-    } else {
-        printf("\nParse failed.\n");
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s <input-file>\n", argv[0]);
+        return 1;
     }
 
-    yy_delete_buffer(buffer);
+    yyin = fopen(argv[1], "r");
+    if (yyin == NULL) {
+        perror(argv[1]);
+        return 1;
+    }
+
+    if (yyparse() == 0) {
+        printf("Parse succeeded.\n");
+    } else {
+        printf("Parse failed.\n");
+    }
+
+    fclose(yyin);
     yylex_destroy();
+
+    for (int i = 0; i < curr_line; i++)
+    {
+        print_asm_line(lines[i]);
+    }
 
     return 0;
 }

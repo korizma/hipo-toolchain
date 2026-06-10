@@ -1,6 +1,6 @@
 obj_folder="bin"
 
-c_files="src/main.c src/grammar/lex.yy.c src/grammar/grammar.tab.c "
+c_files="src/main.c src/grammar/lex.yy.c src/grammar/grammar.tab.c src/asm/code.c"
 output_file="ss"
 
 lexer="src/grammar/lexer.l"
@@ -14,4 +14,4 @@ flex -o "$lexer_out" "$lexer"
 
 gcc $c_files -o "$output_file"
 
-./$output_file
+./$output_file tests/nivo-a/math.s

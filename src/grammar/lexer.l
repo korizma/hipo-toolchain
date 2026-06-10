@@ -2,6 +2,7 @@
 
 %{
 #include "grammar.tab.h"
+#include "helper.h"
 %}
 
 /* Definicije */
@@ -55,14 +56,14 @@ ST      st
 CSRRD   csrrd
 CSRWR   csrwr
 
-GPRX    r([0-9]|1[0-5])
+GPRX    (r([0-9]|1[0-5]))|(sp)|(pc)
 CSRX    (status)|(handler)|(cause)
 
-STRING  \'[a-z]+\'
+STRING  \"[^\"]*\"|\'[^\']*\'
 SYMBOL  [a-zA-Z][a-zA-Z_0-9]*
-LITERAL  [0-9]+
+LITERAL  0x[0-9a-fA-F]+|[0-9]+
 
-COMMENT #.*\n
+COMMENT #.*
 
 
 %%
@@ -80,6 +81,7 @@ COMMENT #.*\n
 "*"      return MULT;
 "/"      return DIVISION;
 "$"      return DOLLAR;
+":"      return COLON;
 {GLOBAL}  return GLOBAL;
 {EXTERN}  return EXTERN;
 {SECTION} return SECTION;
@@ -114,12 +116,12 @@ COMMENT #.*\n
 {ST}      return ST;
 {CSRRD}   return CSRRD;
 {CSRWR}   return CSRWR;
-{GPRX}    return GPRX;
-{CSRX}    return CSRX;
-{COMMENT} return COMMENT;
-{STRING}  {yyval.string = strdup(yytext); return STRING;}
-{LITERAL} {yylval.literal = atoi(yytext); return LITERAL;}
-{SYMBOL}  {yyval.symbol = strdup(yytext); return SYMBOL;}
+{GPRX}    {yylval.reg = strdup(yytext); return GPRX;}
+{CSRX}    {yylval.reg = strdup(yytext); return CSRX;}
+{COMMENT} ;
+{STRING}  {yylval.string = strdup(yytext); return STRING;}
+{LITERAL} {yylval.literal = parse_literal_lex(yytext); return LITERAL;}
+{SYMBOL}  {yylval.symbol = strdup(yytext); return SYMBOL;}
 
 %%
 /* C kod*/

@@ -1,3 +1,6 @@
+#ifndef CODE_H
+#define CODE_H
+
 #include <stdbool.h>
 
 typedef enum {
@@ -30,7 +33,7 @@ typedef struct
 {
     bool has_dollar, has_percent, has_brackets, has_literal, has_symbol;
     long literal;
-    char* simbol;
+    char* symbol;
     int reg;
 } operand_ls;
 
@@ -44,7 +47,8 @@ typedef struct
 typedef struct 
 {
     bool is_instruction, is_directive, is_label;
-    char operation[10];
+    char* operation;
+    char* symbol;
     int reg1, reg2, csreg;
     operand_jmp o_jmp;
     operand_ls o_ls;
@@ -67,7 +71,12 @@ typedef struct
     int byte_num;
     
     // for word
-    sym_or_lit* sym_or_lit_list;
+    sym_or_lit** sym_or_lit_list;
     int sym_or_lit_list_n;
 
 } asm_line;
+
+void print_asm_line(asm_line* line);
+
+
+#endif
