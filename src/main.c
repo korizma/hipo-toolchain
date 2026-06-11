@@ -7,7 +7,7 @@ extern FILE *yyin;
 
 int yylex_destroy(void);
 
-asm_line* lines[1024];
+s_asm_line* lines[1024];
 int curr_line = 0;
 
 int main(int argc, char **argv)

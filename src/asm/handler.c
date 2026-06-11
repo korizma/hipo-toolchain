@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-handlers_arr h_arr;
+s_handlers_arr h_arr;
 extern s_program p;
 
 static s_section* current_section = NULL;
@@ -26,11 +26,11 @@ static s_section* find_section(char* name)
 void init_handler_arr()
 {
     h_arr.size = HANDLERS_START_SIZE;
-    h_arr.entries = (handler_entry*)malloc(sizeof(handler_entry) * h_arr.size);
+    h_arr.entries = (s_handler_entry*)malloc(sizeof(s_handler_entry) * h_arr.size);
     h_arr.next_avail = 0;
 }
 
-static void register_handler_entry(handler_entry entry)
+static void register_handler_entry(s_handler_entry entry)
 {
     if (entry.handler == NULL) {
         return;
@@ -42,7 +42,7 @@ static void register_handler_entry(handler_entry entry)
 
     if (h_arr.next_avail == h_arr.size) {
         h_arr.size += HANDLERS_INCREASE_SIZE;
-        h_arr.entries = (handler_entry*)realloc(h_arr.entries, sizeof(handler_entry) * h_arr.size);
+        h_arr.entries = (s_handler_entry*)realloc(h_arr.entries, sizeof(s_handler_entry) * h_arr.size);
     }
 
     h_arr.entries[h_arr.next_avail] = entry;
@@ -51,23 +51,23 @@ static void register_handler_entry(handler_entry entry)
 
 void register_label_handler(handler_f handler)
 {
-    handler_entry entry = {HANDLER_LABEL, ASM_INSTR_NONE, ASM_DIR_NONE, handler};
+    s_handler_entry entry = {HANDLER_LABEL, ASM_INSTR_NONE, ASM_DIR_NONE, handler};
     register_handler_entry(entry);
 }
 
 void register_instruction_handler(handler_f handler, asm_instruction instruction)
 {
-    handler_entry entry = {HANDLER_INSTRUCTION, instruction, ASM_DIR_NONE, handler};
+    s_handler_entry entry = {HANDLER_INSTRUCTION, instruction, ASM_DIR_NONE, handler};
     register_handler_entry(entry);
 }
 
 void register_directive_handler(handler_f handler, asm_directive directive)
 {
-    handler_entry entry = {HANDLER_DIRECTIVE, ASM_INSTR_NONE, directive, handler};
+    s_handler_entry entry = {HANDLER_DIRECTIVE, ASM_INSTR_NONE, directive, handler};
     register_handler_entry(entry);
 }
 
-void handle_line(asm_line* line)
+void handle_line(s_asm_line* line)
 {
     if (line == NULL) {
         return;
@@ -83,7 +83,7 @@ void handle_line(asm_line* line)
     }
 
     for (int i = 0; i < h_arr.next_avail; i++) {
-        handler_entry* entry = &h_arr.entries[i];
+        s_handler_entry* entry = &h_arr.entries[i];
 
         if ((entry->kind == HANDLER_LABEL && line->is_label) ||
             (entry->kind == HANDLER_INSTRUCTION && line->is_instruction &&

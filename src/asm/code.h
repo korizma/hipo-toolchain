@@ -79,20 +79,20 @@ typedef enum {
     ASM_REG_CAUSE
 } asm_register;
 
-typedef struct expr {
+typedef struct s_expr {
     expr_kind kind;
     int literal;
     char* symbol;
-    struct expr* left;
-    struct expr* right;
-} expr;
+    struct s_expr* left;
+    struct s_expr* right;
+} s_expr;
 
 typedef struct 
 {
     bool is_literal, is_symbol;
     long literal;
     char* symbol;
-} operand_jmp;
+} s_operand_jmp;
 
 
 typedef struct 
@@ -101,14 +101,14 @@ typedef struct
     long literal;
     char* symbol;
     asm_register reg;
-} operand_ls;
+} s_operand_ls;
 
 typedef struct 
 {
     bool is_literal, is_symbol;
     char* symbol;
     int literal;
-} sym_or_lit;
+} s_sym_or_lit;
 
 typedef struct 
 {
@@ -117,12 +117,12 @@ typedef struct
     asm_instruction instruction;
     asm_directive directive;
     asm_register reg1, reg2, csreg;
-    operand_jmp o_jmp;
-    operand_ls o_ls;
+    s_operand_jmp o_jmp;
+    s_operand_ls o_ls;
 
     // for equ
     char* new_symbol;
-    expr expression;
+    s_expr expression;
 
     // for extern, global
     char** symbol_list;
@@ -138,14 +138,14 @@ typedef struct
     int byte_num;
     
     // for word
-    sym_or_lit** sym_or_lit_list;
+    s_sym_or_lit** sym_or_lit_list;
     int sym_or_lit_list_n;
 
-} asm_line;
+} s_asm_line;
 
 const char* asm_instruction_name(asm_instruction instruction);
 const char* asm_directive_name(asm_directive directive);
-void print_asm_line(asm_line* line);
+void print_asm_line(s_asm_line* line);
 
 
 #endif

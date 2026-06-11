@@ -21,13 +21,13 @@ void yyerror(const char *message);
     asm_instruction opB;
     asm_register gprC;
 
-    asm_line* line;
-    operand_jmp o_jmp;
-    operand_ls o_ls;
-    gpr_pair gprs;
-    expr e;
-    list_n_sl listn_sl;
-    list_n_s listn_s;
+    s_asm_line* line;
+    s_operand_jmp o_jmp;
+    s_operand_ls o_ls;
+    s_gpr_pair gprs;
+    s_expr e;
+    s_list_n_sl listn_sl;
+    s_list_n_s listn_s;
 }
 
 %token <literal> LITERAL
@@ -83,7 +83,7 @@ line:
     |   DOT asm_directives NEWLINE
     |   asm_instructions NEWLINE
     |   symbol_name COLON NEWLINE {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_label = true; 
                 line->symbol = $1;
                 add_line(line);        
@@ -92,7 +92,7 @@ line:
 
 asm_directives: 
         GLOBAL symbol_list {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_GLOBAL;
                 reverse_arr_sym(&$2);
@@ -101,7 +101,7 @@ asm_directives:
                 add_line(line);        
             }
     |   EXTERN symbol_list {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_EXTERN;
                 reverse_arr_sym(&$2);
@@ -110,14 +110,14 @@ asm_directives:
                 add_line(line);        
             }
     |   SECTION symbol_name {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_SECTION;
                 line->section_name = $2;
                 add_line(line);        
             }
     |   WORD sym_lit_list {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_WORD;
                 reverse_arr_sl(&$2);
@@ -126,21 +126,21 @@ asm_directives:
                 add_line(line);        
             }
     |   SKIP LITERAL {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_SKIP;
                 line->byte_num = $2;
                 add_line(line);        
             }
     |   ASCII STRING {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_ASCII;
                 line->ascii_string = $2;
                 add_line(line);        
             }
     |   EQU symbol_name COMMA expr {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_EQU;
                 line->new_symbol = $2;
@@ -148,7 +148,7 @@ asm_directives:
                 add_line(line);        
             }
     |   END {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_directive = true; 
                 line->directive = ASM_DIR_END;
                 add_line(line);        
@@ -172,15 +172,15 @@ sym_lit_list:
         LITERAL {
             $$.n = 0;
             $$.curr_size = 10;
-            $$.arr = (sym_or_lit**)malloc(sizeof(sym_or_lit*)*$$.curr_size);
-            sym_or_lit* novi = new_lit_sl($1);
+            $$.arr = (s_sym_or_lit**)malloc(sizeof(s_sym_or_lit*)*$$.curr_size);
+            s_sym_or_lit* novi = new_lit_sl($1);
             add_to_list_sl_list(&$$, novi);
         }
         | symbol_name {
             $$.n = 0;
             $$.curr_size = 10;
-            $$.arr = (sym_or_lit**)malloc(sizeof(sym_or_lit*)*$$.curr_size);
-            sym_or_lit* novi = new_sym_sl($1);
+            $$.arr = (s_sym_or_lit**)malloc(sizeof(s_sym_or_lit*)*$$.curr_size);
+            s_sym_or_lit* novi = new_sym_sl($1);
             add_to_list_sl_list(&$$, novi);
         }
         | symbol_name COMMA sym_lit_list {
@@ -202,35 +202,35 @@ expr:
             $$.right = 0;
         }
     |   symbol_name {
-            expr* e = expr_symbol($1);
+            s_expr* e = expr_symbol($1);
             $$ = *e;
         }
     |   expr PLUS expr {
-            expr* e = expr_binary(EXPR_ADD, expr_literal($1.literal), expr_literal($3.literal));
+            s_expr* e = expr_binary(EXPR_ADD, expr_literal($1.literal), expr_literal($3.literal));
             *e->left = $1;
             *e->right = $3;
             $$ = *e;
         }
     |   expr MINUS expr {
-            expr* e = expr_binary(EXPR_SUB, expr_literal($1.literal), expr_literal($3.literal));
+            s_expr* e = expr_binary(EXPR_SUB, expr_literal($1.literal), expr_literal($3.literal));
             *e->left = $1;
             *e->right = $3;
             $$ = *e;
         }
     |   expr MULT expr {
-            expr* e = expr_binary(EXPR_MUL, expr_literal($1.literal), expr_literal($3.literal));
+            s_expr* e = expr_binary(EXPR_MUL, expr_literal($1.literal), expr_literal($3.literal));
             *e->left = $1;
             *e->right = $3;
             $$ = *e;
         }
     |   expr DIVISION expr {
-            expr* e = expr_binary(EXPR_DIV, expr_literal($1.literal), expr_literal($3.literal));
+            s_expr* e = expr_binary(EXPR_DIV, expr_literal($1.literal), expr_literal($3.literal));
             *e->left = $1;
             *e->right = $3;
             $$ = *e;
         }
     |   MINUS expr %prec UMINUS {
-            expr* e = expr_binary(EXPR_NEG, expr_literal(0), 0);
+            s_expr* e = expr_binary(EXPR_NEG, expr_literal(0), 0);
             *e->left = $2;
             $$ = *e;
         }
@@ -278,45 +278,45 @@ symbol_name:
 
 asm_instructions:
         HALT {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_HALT;
                 add_line(line);        
             }
     |   INT {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_INT;
                 add_line(line);        
             }
     |   IRET {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_IRET;
                 add_line(line);        
             }
     |   RET {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_RET;
                 add_line(line);        
             }
     |   CALL operandJmp {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_CALL;
                 line->o_jmp = $2;
                 add_line(line);      
             }
     |   JMP operandJmp {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_JMP;
                 line->o_jmp = $2;
                 add_line(line);      
             }
     |   branchOp gpr_12 COMMA operandJmp {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = $1;
                 line->reg1 = $2.reg1;
@@ -325,28 +325,28 @@ asm_instructions:
                 add_line(line);      
             }
     |   PUSH gpr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_PUSH;
                 line->reg1 = $2;
                 add_line(line);      
             }
     |   POP gpr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_POP;
                 line->reg1 = $2;
                 add_line(line);      
             }
     |   NOT gpr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_NOT;
                 line->reg1 = $2;
                 add_line(line);      
             }
     |   arithmethicOp gpr_12 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = $1;
                 line->reg1 = $2.reg1;
@@ -354,7 +354,7 @@ asm_instructions:
                 add_line(line);      
             }
     |   LD operandLS COMMA gpr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_LD;
                 line->reg1 = $4;
@@ -362,7 +362,7 @@ asm_instructions:
                 add_line(line);      
             }
     |   ST gpr_1 COMMA operandLS {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_ST;
                 line->reg1 = $2;
@@ -370,7 +370,7 @@ asm_instructions:
                 add_line(line);      
             }
     |   CSRRD csr_1 COMMA gpr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_CSRRD;
                 line->reg1 = $2;
@@ -378,7 +378,7 @@ asm_instructions:
                 add_line(line);      
             }
     |   CSRWR gpr_1 COMMA csr_1 {
-                asm_line* line = new_empty_line(); 
+                s_asm_line* line = new_empty_line(); 
                 line->is_instruction = true; 
                 line->instruction = ASM_INSTR_CSRWR;
                 line->reg1 = $2;

@@ -6,7 +6,7 @@
 #define HANDLERS_START_SIZE 10
 #define HANDLERS_INCREASE_SIZE 10
 
-typedef void (*handler_f)(asm_line* , s_section*);
+typedef void (*handler_f)(s_asm_line* , s_section*);
 
 typedef enum {
     HANDLER_LABEL,
@@ -19,15 +19,15 @@ typedef struct {
     asm_instruction instruction;
     asm_directive directive;
     handler_f handler;
-} handler_entry;
+} s_handler_entry;
 
 typedef struct 
 {
-    handler_entry* entries;
+    s_handler_entry* entries;
     int next_avail, size;
-} handlers_arr;
+} s_handlers_arr;
 
-extern handlers_arr h_arr;
+extern s_handlers_arr h_arr;
 
 void init_handler_arr();
 
@@ -37,6 +37,6 @@ void register_instruction_handler(handler_f handler, asm_instruction instruction
 
 void register_directive_handler(handler_f handler, asm_directive directive);
 
-void handle_line(asm_line* line);
+void handle_line(s_asm_line* line);
 
 #endif

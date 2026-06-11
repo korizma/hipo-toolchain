@@ -8,38 +8,38 @@
 typedef struct {
     asm_register reg1;
     asm_register reg2;
-} gpr_pair;
+} s_gpr_pair;
 
 typedef struct {
-    sym_or_lit** arr;
+    s_sym_or_lit** arr;
     int n, curr_size;
-} list_n_sl;
+} s_list_n_sl;
 
 typedef struct {
     char** arr;
     int n, curr_size;
-} list_n_s;
+} s_list_n_s;
 
-expr* expr_literal(int value);
-expr* expr_symbol(char* symbol);
-expr* expr_binary(expr_kind kind, expr* left, expr* right);
+s_expr* expr_literal(int value);
+s_expr* expr_symbol(char* symbol);
+s_expr* expr_binary(expr_kind kind, s_expr* left, s_expr* right);
 
-asm_line* new_empty_line(void);
-void add_line(asm_line* line);
+s_asm_line* new_empty_line(void);
+void add_line(s_asm_line* line);
 
 asm_register reg_from_name(char* reg);
 
-void allocate_n_more_sym_list(list_n_s* list, int n_more);
-void allocate_n_more_sl_list(list_n_sl* list, int n_more);
+void allocate_n_more_sym_list(s_list_n_s* list, int n_more);
+void allocate_n_more_sl_list(s_list_n_sl* list, int n_more);
 
-void add_to_list_sym_list(list_n_s* list, char* sym);
-void add_to_list_sl_list(list_n_sl* list, sym_or_lit* a);
+void add_to_list_sym_list(s_list_n_s* list, char* sym);
+void add_to_list_sl_list(s_list_n_sl* list, s_sym_or_lit* a);
 
-sym_or_lit* new_lit_sl(int lit);
-sym_or_lit* new_sym_sl(char* sym);
+s_sym_or_lit* new_lit_sl(int lit);
+s_sym_or_lit* new_sym_sl(char* sym);
 
-void reverse_arr_sl(list_n_sl* list);
-void reverse_arr_sym(list_n_s* list);
+void reverse_arr_sl(s_list_n_sl* list);
+void reverse_arr_sym(s_list_n_s* list);
 
 int parse_literal_lex(char* lit);
 

@@ -73,7 +73,7 @@ static void print_reg(asm_register reg)
     }
 }
 
-static void print_jmp_operand(const operand_jmp* operand)
+static void print_jmp_operand(const s_operand_jmp* operand)
 {
     if (operand->is_literal) {
         printf("%ld", operand->literal);
@@ -84,7 +84,7 @@ static void print_jmp_operand(const operand_jmp* operand)
     }
 }
 
-static void print_ls_operand(const operand_ls* operand)
+static void print_ls_operand(const s_operand_ls* operand)
 {
     if (operand->has_dollar) {
         printf("$");
@@ -112,7 +112,7 @@ static void print_ls_operand(const operand_ls* operand)
     }
 }
 
-static void print_expr(const expr* expression)
+static void print_expr(const s_expr* expression)
 {
     if (!expression) {
         printf("<missing expression>");
@@ -156,10 +156,10 @@ static void print_symbol_list(char** symbols, int symbol_count)
     }
 }
 
-static void print_sym_or_lit_list(sym_or_lit** items, int item_count)
+static void print_sym_or_lit_list(s_sym_or_lit** items, int item_count)
 {
     for (int i = 0; i < item_count; i++) {
-        sym_or_lit* item = items[i];
+        s_sym_or_lit* item = items[i];
 
         if (i > 0) {
             printf(", ");
@@ -177,7 +177,7 @@ static void print_sym_or_lit_list(sym_or_lit** items, int item_count)
     }
 }
 
-void print_asm_line(asm_line* line)
+void print_asm_line(s_asm_line* line)
 {
     if (!line) {
         printf("<null line>\n");
