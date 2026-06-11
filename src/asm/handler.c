@@ -3,10 +3,11 @@
 #include <string.h>
 
 handlers_arr h_arr;
+extern s_program p;
 
-static section* current_section = NULL;
+static s_section* current_section = NULL;
 
-static section* find_section(char* name)
+static s_section* find_section(char* name)
 {
     if (name == NULL) {
         return NULL;
@@ -72,15 +73,11 @@ void handle_line(asm_line* line)
         return;
     }
 
-    if (p.sections == NULL) {
-        init_program();
-    }
-
     if (line->is_directive && line->directive == ASM_DIR_SECTION) {
         current_section = find_section(line->section_name);
 
         if (current_section == NULL) {
-            current_section = new_section(line->section_name);
+            current_section = new_s_section(line->section_name);
             add_section_to_program(current_section);
         }
     }

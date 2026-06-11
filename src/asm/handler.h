@@ -1,12 +1,12 @@
 #ifndef HANDLER_H
 #define HANDLER_H
-#include "section.h"
+#include "elf.h"
 #include "code.h"
 
 #define HANDLERS_START_SIZE 10
 #define HANDLERS_INCREASE_SIZE 10
 
-typedef void (*handler_f)(asm_line* , section*);
+typedef void (*handler_f)(asm_line* , s_section*);
 
 typedef enum {
     HANDLER_LABEL,
