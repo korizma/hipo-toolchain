@@ -18,8 +18,8 @@ void yyerror(const char *message);
     char* reg;
     char* symbol;
     char* string;
-    asm_instruction opB;
-    asm_register gprC;
+    e_asm_instruction opB;
+    e_asm_register gprC;
 
     s_asm_line* line;
     s_operand_jmp o_jmp;

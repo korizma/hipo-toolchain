@@ -1,97 +1,52 @@
 #include "handler.h"
+#include "handlers_impl.h"
 #include <stdlib.h>
 #include <string.h>
 
 s_handlers_arr h_arr;
 extern s_program p;
 
-static s_section* current_section = NULL;
-
-static s_section* find_section(char* name)
-{
-    if (name == NULL) {
-        return NULL;
-    }
-
-    for (int i = 0; i < p.number_of_sections; i++) {
-        if (p.sections[i] != NULL && p.sections[i]->name != NULL &&
-            strcmp(p.sections[i]->name, name) == 0) {
-            return p.sections[i];
-        }
-    }
-
-    return NULL;
-}
+s_handler_entry init_handlers[] = {
+    {HANDLER_LABEL, ASM_INSTR_NONE, ASM_DIR_NONE, handle_label},
+    {HANDLER_INSTRUCTION, ASM_INSTR_HALT, ASM_DIR_NONE, handle_halt},
+    {HANDLER_INSTRUCTION, ASM_INSTR_INT, ASM_DIR_NONE, handle_int},
+    {HANDLER_INSTRUCTION, ASM_INSTR_IRET, ASM_DIR_NONE, handle_iret},
+    {HANDLER_INSTRUCTION, ASM_INSTR_CALL, ASM_DIR_NONE, handle_call},
+    {HANDLER_INSTRUCTION, ASM_INSTR_RET, ASM_DIR_NONE, handle_ret},
+    {HANDLER_INSTRUCTION, ASM_INSTR_JMP, ASM_DIR_NONE, handle_jmp},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BEQ, ASM_DIR_NONE, handle_beq},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BNE, ASM_DIR_NONE, handle_bne},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BGT, ASM_DIR_NONE, handle_bgt},
+    {HANDLER_INSTRUCTION, ASM_INSTR_PUSH, ASM_DIR_NONE, handle_push},
+    {HANDLER_INSTRUCTION, ASM_INSTR_POP, ASM_DIR_NONE, handle_pop},
+    {HANDLER_INSTRUCTION, ASM_INSTR_XCHG, ASM_DIR_NONE, handle_xchg},
+    {HANDLER_INSTRUCTION, ASM_INSTR_ADD, ASM_DIR_NONE, handle_add},
+    {HANDLER_INSTRUCTION, ASM_INSTR_SUB, ASM_DIR_NONE, handle_sub},
+    {HANDLER_INSTRUCTION, ASM_INSTR_MUL, ASM_DIR_NONE, handle_mul},
+    {HANDLER_INSTRUCTION, ASM_INSTR_DIV, ASM_DIR_NONE, handle_div},
+    {HANDLER_INSTRUCTION, ASM_INSTR_NOT, ASM_DIR_NONE, handle_not},
+    {HANDLER_INSTRUCTION, ASM_INSTR_AND, ASM_DIR_NONE, handle_and},
+    {HANDLER_INSTRUCTION, ASM_INSTR_OR, ASM_DIR_NONE, handle_or},
+    {HANDLER_INSTRUCTION, ASM_INSTR_XOR, ASM_DIR_NONE, handle_xor},
+    {HANDLER_INSTRUCTION, ASM_INSTR_SHL, ASM_DIR_NONE, handle_shl},
+    {HANDLER_INSTRUCTION, ASM_INSTR_SHR, ASM_DIR_NONE, handle_shr},
+    {HANDLER_INSTRUCTION, ASM_INSTR_LD, ASM_DIR_NONE, handle_ld},
+    {HANDLER_INSTRUCTION, ASM_INSTR_ST, ASM_DIR_NONE, handle_st},
+    {HANDLER_INSTRUCTION, ASM_INSTR_CSRRD, ASM_DIR_NONE, handle_csrrd},
+    {HANDLER_INSTRUCTION, ASM_INSTR_CSRWR, ASM_DIR_NONE, handle_csrwr},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_GLOBAL, handle_global},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_EXTERN, handle_extern},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_SECTION, handle_s_section},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_WORD, handle_word},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_SKIP, handle_skip},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_ASCII, handle_ascii},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_EQU, handle_equ},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_END, handle_end},
+};
 
 void init_handler_arr()
 {
     h_arr.size = HANDLERS_START_SIZE;
     h_arr.entries = (s_handler_entry*)malloc(sizeof(s_handler_entry) * h_arr.size);
     h_arr.next_avail = 0;
-}
-
-static void register_handler_entry(s_handler_entry entry)
-{
-    if (entry.handler == NULL) {
-        return;
-    }
-
-    if (h_arr.entries == NULL || h_arr.size == 0) {
-        init_handler_arr();
-    }
-
-    if (h_arr.next_avail == h_arr.size) {
-        h_arr.size += HANDLERS_INCREASE_SIZE;
-        h_arr.entries = (s_handler_entry*)realloc(h_arr.entries, sizeof(s_handler_entry) * h_arr.size);
-    }
-
-    h_arr.entries[h_arr.next_avail] = entry;
-    h_arr.next_avail++;
-}
-
-void register_label_handler(handler_f handler)
-{
-    s_handler_entry entry = {HANDLER_LABEL, ASM_INSTR_NONE, ASM_DIR_NONE, handler};
-    register_handler_entry(entry);
-}
-
-void register_instruction_handler(handler_f handler, asm_instruction instruction)
-{
-    s_handler_entry entry = {HANDLER_INSTRUCTION, instruction, ASM_DIR_NONE, handler};
-    register_handler_entry(entry);
-}
-
-void register_directive_handler(handler_f handler, asm_directive directive)
-{
-    s_handler_entry entry = {HANDLER_DIRECTIVE, ASM_INSTR_NONE, directive, handler};
-    register_handler_entry(entry);
-}
-
-void handle_line(s_asm_line* line)
-{
-    if (line == NULL) {
-        return;
-    }
-
-    if (line->is_directive && line->directive == ASM_DIR_SECTION) {
-        current_section = find_section(line->section_name);
-
-        if (current_section == NULL) {
-            current_section = new_s_section(line->section_name);
-            add_section_to_program(current_section);
-        }
-    }
-
-    for (int i = 0; i < h_arr.next_avail; i++) {
-        s_handler_entry* entry = &h_arr.entries[i];
-
-        if ((entry->kind == HANDLER_LABEL && line->is_label) ||
-            (entry->kind == HANDLER_INSTRUCTION && line->is_instruction &&
-             entry->instruction == line->instruction) ||
-            (entry->kind == HANDLER_DIRECTIVE && line->is_directive &&
-             entry->directive == line->directive)) {
-            entry->handler(line, current_section);
-            return;
-        }
-    }
 }

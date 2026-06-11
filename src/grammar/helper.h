@@ -6,8 +6,8 @@
 #include "string.h"
 
 typedef struct {
-    asm_register reg1;
-    asm_register reg2;
+    e_asm_register reg1;
+    e_asm_register reg2;
 } s_gpr_pair;
 
 typedef struct {
@@ -22,12 +22,12 @@ typedef struct {
 
 s_expr* expr_literal(int value);
 s_expr* expr_symbol(char* symbol);
-s_expr* expr_binary(expr_kind kind, s_expr* left, s_expr* right);
+s_expr* expr_binary(e_expr_kind kind, s_expr* left, s_expr* right);
 
 s_asm_line* new_empty_line(void);
 void add_line(s_asm_line* line);
 
-asm_register reg_from_name(char* reg);
+e_asm_register reg_from_name(char* reg);
 
 void allocate_n_more_sym_list(s_list_n_s* list, int n_more);
 void allocate_n_more_sl_list(s_list_n_sl* list, int n_more);

@@ -12,12 +12,12 @@ typedef enum {
     HANDLER_LABEL,
     HANDLER_INSTRUCTION,
     HANDLER_DIRECTIVE
-} handler_kind;
+} e_handler_kind;
 
 typedef struct {
-    handler_kind kind;
-    asm_instruction instruction;
-    asm_directive directive;
+    e_handler_kind kind;
+    e_asm_instruction instruction;
+    e_asm_directive directive;
     handler_f handler;
 } s_handler_entry;
 
@@ -33,10 +33,12 @@ void init_handler_arr();
 
 void register_label_handler(handler_f handler);
 
-void register_instruction_handler(handler_f handler, asm_instruction instruction);
+void register_instruction_handler(handler_f handler, e_asm_instruction instruction);
 
-void register_directive_handler(handler_f handler, asm_directive directive);
+void register_directive_handler(handler_f handler, e_asm_directive directive);
 
 void handle_line(s_asm_line* line);
+
+void register_init_handlers();
 
 #endif

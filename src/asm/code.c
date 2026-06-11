@@ -2,7 +2,7 @@
 
 #include <stdio.h>
 
-const char* asm_instruction_name(asm_instruction instruction)
+const char* asm_instruction_name(e_asm_instruction instruction)
 {
     switch (instruction) {
     case ASM_INSTR_HALT: return "halt";
@@ -37,7 +37,7 @@ const char* asm_instruction_name(asm_instruction instruction)
     return NULL;
 }
 
-const char* asm_directive_name(asm_directive directive)
+const char* asm_directive_name(e_asm_directive directive)
 {
     switch (directive) {
     case ASM_DIR_GLOBAL: return "global";
@@ -54,7 +54,7 @@ const char* asm_directive_name(asm_directive directive)
     return NULL;
 }
 
-static void print_reg(asm_register reg)
+static void print_reg(e_asm_register reg)
 {
     if (reg == ASM_REG_HANDLER) {
         printf("%%handler");

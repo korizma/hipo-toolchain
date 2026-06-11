@@ -27,7 +27,7 @@ typedef enum {
     STB_HIOS = 12,
     STB_LOPROC = 13,
     STB_HIPROC = 15
-} s_Elf64_SymbolBinding;
+} e_Elf64_SymbolBinding;
 
 typedef enum {
     STT_NOTYPE = 0,
@@ -41,14 +41,14 @@ typedef enum {
     STT_HIOS = 12,
     STT_LOPROC = 13,
     STT_HIPROC = 15
-} s_Elf64_SymbolType;
+} e_Elf64_SymbolType;
 
 typedef enum {
     STV_DEFAULT = 0,
     STV_INTERNAL = 1,
     STV_HIDDEN = 2,
     STV_PROTECTED = 3
-} s_Elf64_SymbolVisibility;
+} e_Elf64_SymbolVisibility;
 
 typedef struct {
     char*    st_name;        // symbol name
@@ -76,6 +76,8 @@ s_section* new_s_section(char* name);
 
 void write_bytes_to_section(s_section* s, char* bytes, int num);
 
+void skip_bytes_in_section(s_section* s, int num);
+
 void init_program();
 
 void add_section_to_program(s_section* s);
@@ -83,13 +85,17 @@ void add_section_to_program(s_section* s);
 void export_program_to_elf();
 
 void add_to_symbol_table(   char* symbol, 
-                            s_Elf64_SymbolType type, 
-                            s_Elf64_SymbolBinding binding, 
-                            s_Elf64_SymbolVisibility visibility, 
+                            e_Elf64_SymbolType type, 
+                            e_Elf64_SymbolBinding binding, 
+                            e_Elf64_SymbolVisibility visibility, 
                             s_section* section, 
                             long sym_offset,
                             long sym_size );
 
 bool check_symbol_table(char* symbol);
+
+// need to add visibility manip for .global directive
+
+// also need to add relocation tables
 
 #endif

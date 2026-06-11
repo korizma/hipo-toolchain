@@ -28,7 +28,7 @@ s_expr* expr_symbol(char* symbol) {
     return e;
 }
 
-s_expr* expr_binary(expr_kind kind, s_expr* left, s_expr* right) {
+s_expr* expr_binary(e_expr_kind kind, s_expr* left, s_expr* right) {
     s_expr* e = malloc(sizeof(s_expr));
     e->kind = kind;
     e->literal = 0;
@@ -48,7 +48,7 @@ void add_line(s_asm_line* line)
     lines[curr_line++] = line;
 }
 
-asm_register reg_from_name(char* reg)
+e_asm_register reg_from_name(char* reg)
 {
     if (strcmp(reg, "handler") == 0)
     {
@@ -70,7 +70,7 @@ asm_register reg_from_name(char* reg)
     {
         return ASM_REG_PC;
     }
-    return (asm_register)atoi(reg + 1);
+    return (e_asm_register)atoi(reg + 1);
 }
 
 void allocate_n_more_sym_list(s_list_n_s* list, int n_more)
