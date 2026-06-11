@@ -23,7 +23,7 @@ typedef struct {
 
 typedef struct 
 {
-    s_handler_entry* entries;
+    s_handler_entry** entries;
     int next_avail, size;
 } s_handlers_arr;
 
@@ -31,11 +31,9 @@ extern s_handlers_arr h_arr;
 
 void init_handler_arr();
 
-void register_label_handler(handler_f handler);
+void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directive direct, handler_f handler);
 
-void register_instruction_handler(handler_f handler, e_asm_instruction instruction);
-
-void register_directive_handler(handler_f handler, e_asm_directive directive);
+void register_handler_struct(s_handler_entry* entry);
 
 void handle_line(s_asm_line* line);
 

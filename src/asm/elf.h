@@ -9,17 +9,12 @@
 #define PROGRAM_SECTION_INCREMENT 10
 #define SYM_TABLE_START_SIZE 10
 #define SYM_TABLE_INCREMENT 10
+#define RELA_TABLE_START_SIZE 10
+#define RELA_TABLE_INCREMENT 10
 
 
-typedef struct
+typedef enum 
 {
-    char* name;
-    int next_free, size;
-    char* bytes;
-} s_section;
-
-
-typedef enum {
     STB_LOCAL = 0,
     STB_GLOBAL = 1,
     STB_WEAK = 2,
@@ -29,7 +24,8 @@ typedef enum {
     STB_HIPROC = 15
 } e_Elf64_SymbolBinding;
 
-typedef enum {
+typedef enum 
+{
     STT_NOTYPE = 0,
     STT_OBJECT = 1,
     STT_FUNC = 2,
@@ -43,18 +39,44 @@ typedef enum {
     STT_HIPROC = 15
 } e_Elf64_SymbolType;
 
-typedef enum {
+typedef enum 
+{
     STV_DEFAULT = 0,
     STV_INTERNAL = 1,
     STV_HIDDEN = 2,
     STV_PROTECTED = 3
 } e_Elf64_SymbolVisibility;
 
+typedef enum 
+{
+    R_HIPO_NONE = 0,
+    R_HIPO_32 = 1,
+    R_HIPO_12 = 2,
+    R_HIPO_PC12 = 3
+} e_Elf64_reloc_type;
+
+typedef struct s_section s_section;
+
+typedef struct {
+    unsigned long r_offset;    // offset in the section to replace
+    int sym_index;    // symbol index in the symbol table
+    e_Elf64_reloc_type reloc_type;  // relocation entry type
+    long r_addend;  // addend field
+} s_Elf64_Rela_entry;
+
+typedef struct
+{
+    s_section* section;
+    s_Elf64_Rela_entry** entries;
+    int entry_num, size;
+} s_rela_table;
+
 typedef struct {
     char*    st_name;        // symbol name
-    unsigned char st_info;   // symbol type and binding
-    unsigned char st_other;  // visibility
-    s_section* section;            // s_section index
+    e_Elf64_SymbolType type;
+    e_Elf64_SymbolBinding binding;
+    e_Elf64_SymbolVisibility visibility;
+    s_section* section;      // s_section index
     long    st_value;        // symbol value/address/offset
     long   st_size;          // symbol size in bytes
 } s_Elf64_Sym;
@@ -65,9 +87,20 @@ typedef struct
     int symbol_num, size;
 } s_symbol_table;
 
+
+struct s_section
+{
+    char* name;
+    int next_free, size;
+    char* bytes;
+    s_rela_table* rela_table;
+};
+
+
+
 typedef struct
 {
-    s_section** sections;
+    s_section** sections, *curr_section;
     int number_of_sections, section_arr_size;
     s_symbol_table* sym_table;
 } s_program;
@@ -92,10 +125,21 @@ void add_to_symbol_table(   char* symbol,
                             long sym_offset,
                             long sym_size );
 
-bool check_symbol_table(char* symbol);
+int check_symbol_table(char* symbol);
 
 // need to add visibility manip for .global directive
 
-// also need to add relocation tables
+void create_rela_table(s_section* s);
+
+// void create_rela_entry(unsigned long offset, int sym_index, e_Elf64_reloc_type type, long addend);
+
+// notes:
+// types of relocation 
+// jump label relocation
+//      symbol in section
+//      symbol not in section
+// any reference to a symbol that is not defined at asm time
+//      sym global
+//      sym local
 
 #endif
