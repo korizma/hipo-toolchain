@@ -6,7 +6,7 @@
 #define HANDLERS_START_SIZE 10
 #define HANDLERS_INCREASE_SIZE 10
 
-typedef void (*handler_f)(s_asm_line* , s_section*);
+typedef int (*handler_f)(s_asm_line* , s_section*);
 
 typedef enum {
     HANDLER_LABEL,

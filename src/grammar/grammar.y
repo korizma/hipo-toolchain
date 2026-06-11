@@ -435,66 +435,50 @@ operandJmp:
 
 operandLS:
         DOLLAR LITERAL {
-            $$.has_dollar = $$.has_literal = true;
-            $$.has_percent = $$.has_brackets = $$.has_symbol = false;
+            $$.kind = ASM_OPERAND_LS_IMM_LITERAL;
             $$.literal = $2;
+            $$.symbol = 0;
+            $$.reg = ASM_REG_R0;
         }
     |   DOLLAR symbol_name {
-            $$.has_dollar = $$.has_symbol = true;
-            $$.has_percent = $$.has_brackets = $$.has_literal = false;
+            $$.kind = ASM_OPERAND_LS_IMM_SYMBOL;
+            $$.literal = 0;
             $$.symbol = $2;
+            $$.reg = ASM_REG_R0;
         }
     |   LITERAL {
-            $$.has_literal = true;
-            $$.has_percent = $$.has_brackets = $$.has_symbol = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_MEM_LITERAL;
             $$.literal = $1;
+            $$.symbol = 0;
+            $$.reg = ASM_REG_R0;
         }
     |   symbol_name {
-            $$.has_symbol = true;
-            $$.has_percent = $$.has_brackets = $$.has_literal = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_MEM_SYMBOL;
+            $$.literal = 0;
             $$.symbol = $1;
+            $$.reg = ASM_REG_R0;
         }
     |   PERCENT GPRX {
-            $$.has_percent = true;
-            $$.has_symbol = $$.has_brackets = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_from_name($2);
-        }
-    |   PERCENT CSRX {
-            $$.has_percent = true;
-            $$.has_symbol = $$.has_brackets = $$.has_literal = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_REG;
+            $$.literal = 0;
+            $$.symbol = 0;
             $$.reg = reg_from_name($2);
         }
     |   RBRACK PERCENT GPRX LBRACK {
-            $$.has_percent = $$.has_brackets = true;
-            $$.has_symbol = $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_from_name($3);
-        }
-    |   RBRACK PERCENT CSRX LBRACK {
-            $$.has_percent = $$.has_brackets = true;
-            $$.has_symbol = $$.has_literal = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_REG_INDIRECT;
+            $$.literal = 0;
+            $$.symbol = 0;
             $$.reg = reg_from_name($3);
         }
     |   RBRACK PERCENT GPRX PLUS LITERAL LBRACK {
-            $$.has_percent = $$.has_brackets = $$.has_literal = true;
-            $$.has_symbol = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_REG_INDIRECT_LITERAL;
             $$.reg = reg_from_name($3);
             $$.literal = $5;
-        }
-    |   RBRACK PERCENT CSRX PLUS LITERAL LBRACK {
-            $$.has_percent = $$.has_brackets = $$.has_literal = true;
-            $$.has_symbol = $$.has_dollar = false;
-            $$.reg = reg_from_name($3);
-            $$.literal = $5;
+            $$.symbol = 0;
         }
     |   RBRACK PERCENT GPRX PLUS symbol_name LBRACK {
-            $$.has_percent = $$.has_brackets = $$.has_symbol = true;
-            $$.has_literal = $$.has_dollar = false;
-            $$.reg = reg_from_name($3);
-            $$.symbol = $5;
-        }
-    |   RBRACK PERCENT CSRX PLUS symbol_name LBRACK {
-            $$.has_percent = $$.has_brackets = $$.has_symbol = true;
-            $$.has_literal = $$.has_dollar = false;
+            $$.kind = ASM_OPERAND_LS_REG_INDIRECT_SYMBOL;
+            $$.literal = 0;
             $$.reg = reg_from_name($3);
             $$.symbol = $5;
         }

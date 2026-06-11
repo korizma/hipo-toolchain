@@ -99,7 +99,7 @@ int check_symbol_table(char* symbol)
 {
     for (int i = 0; i < p.sym_table->symbol_num; i++)
     {
-        if (strcmp(symbol, p.sym_table->symbols[i]) == 0)
+        if (strcmp(symbol, p.sym_table->symbols[i]->st_name) == 0)
             return i;
     }
     return -1;

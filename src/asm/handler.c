@@ -13,10 +13,10 @@ s_handler_entry init_handlers[] = {
     {HANDLER_INSTRUCTION, ASM_INSTR_IRET, ASM_DIR_NONE, handle_iret},
     {HANDLER_INSTRUCTION, ASM_INSTR_CALL, ASM_DIR_NONE, handle_call},
     {HANDLER_INSTRUCTION, ASM_INSTR_RET, ASM_DIR_NONE, handle_ret},
-    {HANDLER_INSTRUCTION, ASM_INSTR_JMP, ASM_DIR_NONE, handle_jmp},
-    {HANDLER_INSTRUCTION, ASM_INSTR_BEQ, ASM_DIR_NONE, handle_beq},
-    {HANDLER_INSTRUCTION, ASM_INSTR_BNE, ASM_DIR_NONE, handle_bne},
-    {HANDLER_INSTRUCTION, ASM_INSTR_BGT, ASM_DIR_NONE, handle_bgt},
+    {HANDLER_INSTRUCTION, ASM_INSTR_JMP, ASM_DIR_NONE, handle_branch},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BEQ, ASM_DIR_NONE, handle_branch},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BNE, ASM_DIR_NONE, handle_branch},
+    {HANDLER_INSTRUCTION, ASM_INSTR_BGT, ASM_DIR_NONE, handle_branch},
     {HANDLER_INSTRUCTION, ASM_INSTR_PUSH, ASM_DIR_NONE, handle_push},
     {HANDLER_INSTRUCTION, ASM_INSTR_POP, ASM_DIR_NONE, handle_pop},
     {HANDLER_INSTRUCTION, ASM_INSTR_XCHG, ASM_DIR_NONE, handle_xchg},
@@ -32,11 +32,11 @@ s_handler_entry init_handlers[] = {
     {HANDLER_INSTRUCTION, ASM_INSTR_SHR, ASM_DIR_NONE, handle_sh},
     {HANDLER_INSTRUCTION, ASM_INSTR_LD, ASM_DIR_NONE, handle_ld},
     {HANDLER_INSTRUCTION, ASM_INSTR_ST, ASM_DIR_NONE, handle_st},
-    {HANDLER_INSTRUCTION, ASM_INSTR_CSRRD, ASM_DIR_NONE, handle_csrrd},
-    {HANDLER_INSTRUCTION, ASM_INSTR_CSRWR, ASM_DIR_NONE, handle_csrwr},
+    {HANDLER_INSTRUCTION, ASM_INSTR_CSRRD, ASM_DIR_NONE, handle_control_rw},
+    {HANDLER_INSTRUCTION, ASM_INSTR_CSRWR, ASM_DIR_NONE, handle_control_rw},
     {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_GLOBAL, handle_global},
     {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_EXTERN, handle_extern},
-    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_SECTION, handle_s_section},
+    {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_SECTION, handle_section},
     {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_WORD, handle_word},
     {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_SKIP, handle_skip},
     {HANDLER_DIRECTIVE, ASM_INSTR_NONE, ASM_DIR_ASCII, handle_ascii},
@@ -47,7 +47,7 @@ s_handler_entry init_handlers[] = {
 void init_handler_arr()
 {
     h_arr.size = HANDLERS_START_SIZE;
-    h_arr.entries = (s_handler_entry*)malloc(sizeof(s_handler_entry) * h_arr.size);
+    h_arr.entries = (s_handler_entry**)malloc(sizeof(s_handler_entry*) * h_arr.size);
     h_arr.next_avail = 0;
 }
 
@@ -55,7 +55,7 @@ void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directi
 {
     if (h_arr.next_avail == h_arr.size) {
         h_arr.size += HANDLERS_INCREASE_SIZE;
-        h_arr.entries = (s_handler_entry*)realloc(h_arr.entries, sizeof(s_handler_entry) * h_arr.size);
+        h_arr.entries = (s_handler_entry**)realloc(h_arr.entries, sizeof(s_handler_entry*) * h_arr.size);
     }
     s_handler_entry* new_entry = (s_handler_entry*)malloc(sizeof(s_handler_entry));
     new_entry->kind = kind;
@@ -101,7 +101,7 @@ void register_handler_struct(s_handler_entry* entry)
 {
     if (h_arr.next_avail == h_arr.size) {
         h_arr.size += HANDLERS_INCREASE_SIZE;
-        h_arr.entries = (s_handler_entry*)realloc(h_arr.entries, sizeof(s_handler_entry) * h_arr.size);
+        h_arr.entries = (s_handler_entry**)realloc(h_arr.entries, sizeof(s_handler_entry*) * h_arr.size);
     }
     h_arr.entries[h_arr.next_avail++] = entry;
 }

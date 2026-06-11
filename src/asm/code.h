@@ -94,10 +94,21 @@ typedef struct
     char* symbol;
 } s_operand_jmp;
 
+typedef enum {
+    ASM_OPERAND_LS_NONE = 0,
+    ASM_OPERAND_LS_IMM_LITERAL,
+    ASM_OPERAND_LS_IMM_SYMBOL,
+    ASM_OPERAND_LS_MEM_LITERAL,
+    ASM_OPERAND_LS_MEM_SYMBOL,
+    ASM_OPERAND_LS_REG,
+    ASM_OPERAND_LS_REG_INDIRECT,
+    ASM_OPERAND_LS_REG_INDIRECT_LITERAL,
+    ASM_OPERAND_LS_REG_INDIRECT_SYMBOL
+} e_operand_ls_kind;
 
 typedef struct 
 {
-    bool has_dollar, has_percent, has_brackets, has_literal, has_symbol;
+    e_operand_ls_kind kind;
     long literal;
     char* symbol;
     e_asm_register reg;

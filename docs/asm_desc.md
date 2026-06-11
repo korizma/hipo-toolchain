@@ -42,3 +42,15 @@ Sve asemblerske direktive su date ovde:
 .equ <novi_simobl>, <izraz>
 .end
 ```
+
+Operandi u instrukcijama za rad sa podacima
+```
+$<literal> - vrednost <literal>
+$<simbol> - vrednost <simbol>
+<literal> - vrednost iz memorije na adresi <literal>
+<simbol> - vrednost iz memorije na adresi <simbol>
+%<reg> - vrednost u registru <reg>
+[%<reg>] - vrednost iz memorije na adresi <reg>
+[%<reg> + <literal>] - vrednost iz memorije na adresi <reg> + <literal>1
+[%<reg> + <simbol>] - vrednost iz memorije na adresi <reg> + <simbol>2
+```

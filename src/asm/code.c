@@ -86,29 +86,40 @@ static void print_jmp_operand(const s_operand_jmp* operand)
 
 static void print_ls_operand(const s_operand_ls* operand)
 {
-    if (operand->has_dollar) {
-        printf("$");
-    }
-
-    if (operand->has_brackets) {
-        printf("[");
-    }
-
-    if (operand->has_percent) {
-        print_reg(operand->reg);
-        if (operand->has_literal || operand->has_symbol) {
-            printf(" + ");
-        }
-    }
-
-    if (operand->has_literal) {
+    switch (operand->kind) {
+    case ASM_OPERAND_LS_IMM_LITERAL:
+        printf("$%ld", operand->literal);
+        break;
+    case ASM_OPERAND_LS_IMM_SYMBOL:
+        printf("$%s", operand->symbol ? operand->symbol : "<missing symbol>");
+        break;
+    case ASM_OPERAND_LS_MEM_LITERAL:
         printf("%ld", operand->literal);
-    } else if (operand->has_symbol && operand->symbol) {
-        printf("%s", operand->symbol);
-    }
-
-    if (operand->has_brackets) {
+        break;
+    case ASM_OPERAND_LS_MEM_SYMBOL:
+        printf("%s", operand->symbol ? operand->symbol : "<missing symbol>");
+        break;
+    case ASM_OPERAND_LS_REG:
+        print_reg(operand->reg);
+        break;
+    case ASM_OPERAND_LS_REG_INDIRECT:
+        printf("[");
+        print_reg(operand->reg);
         printf("]");
+        break;
+    case ASM_OPERAND_LS_REG_INDIRECT_LITERAL:
+        printf("[");
+        print_reg(operand->reg);
+        printf(" + %ld]", operand->literal);
+        break;
+    case ASM_OPERAND_LS_REG_INDIRECT_SYMBOL:
+        printf("[");
+        print_reg(operand->reg);
+        printf(" + %s]", operand->symbol ? operand->symbol : "<missing symbol>");
+        break;
+    case ASM_OPERAND_LS_NONE:
+        printf("<missing operand>");
+        break;
     }
 }
 
