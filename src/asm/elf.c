@@ -48,7 +48,27 @@ void add_section_to_program(s_section* s)
     p.sections[p.number_of_sections++] = s;
 }
 
+int find_section_index(char* name)
+{
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        if (strcmp(p.sections[i]->name, name) == 0)
+            return i;
+    }
+    return -1;
+}
 
+
+int find_label_in_section_if_last(s_section* s)
+{
+    for (int i = 0; i < p.sym_table->symbol_num; i++)
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[i];
+        if (sym->section == s && sym->st_value == s->next_free)
+            return i;
+    }
+    return -1;
+}
 
 void export_program_to_elf()
 {
@@ -105,6 +125,13 @@ int check_symbol_table(char* symbol)
     return -1;
 }
 
+bool check_if_symbol_can_be_jumped_to(char* symbol)
+{
+    int indx = check_symbol_table(symbol);
+    if (indx == -1)
+        return false;
+    return p.sym_table->symbols[indx]->type == STT_NOTYPE;
+}
 
 void create_rela_table(s_section* s)
 {

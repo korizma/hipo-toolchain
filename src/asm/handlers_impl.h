@@ -2,6 +2,7 @@
 #define HANDLERS_IMPL_H
 
 #define INSTRUCTION_BYTE_LEN 4
+#define WORD_SIZE 4
 
 #include "code.h"
 #include "elf.h"

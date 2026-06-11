@@ -117,6 +117,13 @@ int handle_call(s_asm_line* line, s_section* s)
             // for now error, but will need to add the instruction to a second pass, and save the location of this
             return -1;
         }
+
+        if (!check_if_symbol_can_be_jumped_to(line->o_jmp.symbol))
+        {
+            printf("ERROR: call operand: symbol %s cannot be jumped to!\n", line->o_jmp.symbol);
+            return -1;
+        }
+
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
         // in the same section, we try to fit in 12b, if not can_fit = false after if
@@ -194,6 +201,13 @@ int handle_branch(s_asm_line* line, s_section* s)
             // for now error, but will need to add the instruction to a second pass, and save the location of this
             return -1;
         }
+
+        if (!check_if_symbol_can_be_jumped_to(line->o_jmp.symbol))
+        {
+            printf("ERROR: call operand: symbol %s cannot be jumped to!\n", line->o_jmp.symbol);
+            return -1;
+        }
+
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
         // in the same section, we try to fit in 12b, if not can_fit = false after if
@@ -576,50 +590,167 @@ int handle_control_rw(s_asm_line* line, s_section* s)
     return 0;
 }
 
-
 int handle_global(s_asm_line* line, s_section* s)
 {
-
+    int n = line->symbol_list_n;
+    for (int i = 0; i < n; i++)
+    {
+        if (check_symbol_table(line->symbol_list[i]) != -1)
+        {
+            printf("ERROR: symbol %s already defined, cannot be extern!\n", line->symbol_list[i]);
+            return -1;
+        }
+        add_to_symbol_table(line->symbol_list[i], -1, STB_GLOBAL, STV_DEFAULT, (s_section*)-1, -1, -1);
+    }
+    return 0;
 }
+
 int handle_extern(s_asm_line* line, s_section* s)
 {
-    char type = STT_NOTYPE;
-    add_to_symbol_table(line->symbol, type, STB_GLOBAL, STV_DEFAULT, 0, 0, 0);
+    int n = line->symbol_list_n;
+    for (int i = 0; i < n; i++)
+    {
+        if (check_symbol_table(line->symbol_list[i]) != -1)
+        {
+            printf("ERROR: symbol %s already defined, cannot be extern!\n", line->symbol_list[i]);
+            return -1;
+        }
+        add_to_symbol_table(line->symbol_list[i], STT_NOTYPE, STB_GLOBAL, STV_DEFAULT, 0, 0, 0);
+    }
+    return 0;
 }
+
 int handle_section(s_asm_line* line, s_section* s)
 {
-
+    add_to_symbol_table(s->name, STT_SECTION, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
+    add_section_to_program(s);
+    if (find_section_index(line->section_name) == -1)
+    {
+        p.curr_section = new_section(line->section_name);
+    }
+    else
+    {
+        printf("ERROR: section %s already defined!\n", line->section_name);
+        return -1;
+    }
+    return 0;
 }
+
 int handle_word(s_asm_line* line, s_section* s)
 {
+    int indx = find_label_in_section_if_last(s);
+    if (indx != -1)
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        sym->st_size = WORD_SIZE * line->sym_or_lit_list_n;
+    }
 
+    int n = line->sym_or_lit_list_n;
+    for (int i = 0; i < n; i++)
+    {
+        if (line->sym_or_lit_list[i]->is_literal)
+        {
+            long literal = line->sym_or_lit_list[i]->literal;
+            char bytes[4];
+            bytes[0] = literal & 0xFF;
+            bytes[1] = (literal >> 8) & 0xFF;
+            bytes[2] = (literal >> 16) & 0xFF;
+            bytes[3] = (literal >> 24) & 0xFF;
+            write_bytes_to_section(s, bytes, 4);
+        }
+        else if (line->sym_or_lit_list[i]->is_symbol)
+        {
+            int indx = check_symbol_table(line->sym_or_lit_list[i]->symbol);
+            if (indx == -1)
+            {
+                printf("temp ERROR: word operand: symbol %s not defined!\n", line->sym_or_lit_list[i]->symbol);
+                // for now error, but will need to add the instruction to a second pass, and save the location of this
+                return -1;
+            }
+
+            s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+            // create relocation for this symbol
+            // for now just skip
+            skip_bytes_in_section(s, WORD_SIZE);
+        }
+    }
+    return 0;
 }
+
 int handle_skip(s_asm_line* line, s_section* s)
 {
-
+    int indx = find_label_in_section_if_last(s);
+    if (indx != -1)
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        sym->st_size = line->byte_num;
+    }
+    skip_bytes_in_section(s, line->byte_num);
+    return 0;
 }
+
 int handle_ascii(s_asm_line* line, s_section* s)
 {
+    int indx = find_label_in_section_if_last(s);
+    if (indx != -1)
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        sym->st_size = strlen(line->ascii_string);
+    }
 
+    write_bytes_to_section(s, line->ascii_string, strlen(line->ascii_string));
+    return 0;
 }
+
 int handle_equ(s_asm_line* line, s_section* s)
 {
-
+    return 0;
 }
+
 int handle_end(s_asm_line* line, s_section* s)
 {
     add_to_symbol_table(s->name, STT_SECTION, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
     add_section_to_program(s);
     p.curr_section = 0;
+    return 0;
 }
 
 int handle_label(s_asm_line* line, s_section* s)
 {
     char type = STT_NOTYPE;
-    if (strcmp(s->name, "common") == 0)
+    if (s > 0 && strcmp(s->name, "common") == 0)
         type = STT_COMMON;
-    add_to_symbol_table(line->symbol, type, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
+    int indx = check_symbol_table(line->symbol);
+
+    if (indx == -1)
+    {
+        add_to_symbol_table(line->symbol, type, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
+    }
+    else
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        if (sym->type != -1)
+        {
+            printf("ERROR: symbol %s already defined, cannot be redefined!\n", line->symbol);
+            return -1;
+        }
+
+        if (sym->binding == -1)
+            sym->binding = STB_LOCAL;
+        if (sym->visibility == -1)
+            sym->visibility = STV_DEFAULT;
+        if (sym->section == (s_section*)-1)
+            sym->section = s;
+        if (sym->st_value == -1)
+            sym->st_value = s->next_free;
+        if (sym->st_size == -1)
+            sym->st_size = 0;
+        if (sym->type == -1)
+            sym->type = type;
+    }
+
     // sym size needs to be set only if the next directive is ascii, word or skip
+    return 0;
 }
 
 char* translate_to_binary(char oc, char mod, char reg_a, char reg_b, char reg_c, long disp)

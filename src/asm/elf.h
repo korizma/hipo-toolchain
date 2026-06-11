@@ -105,11 +105,15 @@ typedef struct
     s_symbol_table* sym_table;
 } s_program;
 
-s_section* new_s_section(char* name);
+s_section* new_section(char* name);
 
 void write_bytes_to_section(s_section* s, char* bytes, int num);
 
 void skip_bytes_in_section(s_section* s, int num);
+
+int find_section_index(char* name);
+
+int find_label_in_section_if_last(s_section* s);
 
 void init_program();
 
@@ -127,7 +131,8 @@ void add_to_symbol_table(   char* symbol,
 
 int check_symbol_table(char* symbol);
 
-// need to add visibility manip for .global directive
+// only returns true if symbol has type NOTYPE
+bool check_if_symbol_can_be_jumped_to(char* symbol);
 
 void create_rela_table(s_section* s);
 
