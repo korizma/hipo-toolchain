@@ -83,9 +83,22 @@ int handle_word(s_asm_line* line, s_section* s)
             int indx = get_and_set_reference(line->sym_or_lit_list[i]->symbol);
 
             s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-            // create relocation for this symbol
-            // for now just skip
-            skip_bytes_in_section(s, WORD_SIZE);
+
+            if (sym->type != STT_SECTION)
+                sym->st_size = WORD_SIZE;
+            
+            if (sym->binding == STB_GLOBAL)
+            {
+                // symbol is global, so we can relocate on it
+                create_rela_entry(s, s->next_free, indx, R_HIPO_32, 0);
+            }
+            else
+            {
+                // symbol is not global, so we need to use section as base
+                // symbol maybe declared as global later, so this will could be changed when creating the rela table
+                int section_indx_in_sym_table = check_symbol_table(s->name);
+                create_rela_entry(s, s->next_free, section_indx_in_sym_table, R_HIPO_32, sym->st_value);
+            }
         }
     }
     return 0;

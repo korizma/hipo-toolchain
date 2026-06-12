@@ -63,4 +63,6 @@ long calculate_expression(s_expr* expression);
 char find_operation_code(e_asm_instruction instr);
 char find_operation_mod(s_asm_line* line);
 
+bool long_fit_in_12b(long a);
+
 #endif

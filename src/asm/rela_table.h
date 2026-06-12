@@ -31,15 +31,8 @@ typedef struct s_rela_table
 
 void create_rela_table(s_section* s);
 
-// void create_rela_entry(unsigned long offset, int sym_index, e_Elf64_reloc_type type, long addend);
+void create_rela_entry(s_section* s, unsigned long offset, int sym_index, e_Elf64_reloc_type type, long addend);
 
-// notes:
-// types of relocation 
-// jump label relocation
-//      symbol in section
-//      symbol not in section
-// any reference to a symbol that is not defined at asm time
-//      sym global
-//      sym local
+s_section* create_section_from_rela_table(s_rela_table* rela_table);
 
 #endif

@@ -102,3 +102,8 @@ char find_operation_mod(s_asm_line* line)
     }
     return -1; // not found
 }
+
+bool long_fit_in_12b(long a)
+{
+
+}
