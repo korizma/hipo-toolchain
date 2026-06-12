@@ -6,56 +6,6 @@
 
 extern s_program p;
 
-char operation_to_oc[][2] = {
-    {ASM_INSTR_HALT, 0},
-    {ASM_INSTR_INT, 1},
-    {ASM_INSTR_IRET, 9},
-    {ASM_INSTR_CALL, 2},
-    {ASM_INSTR_RET, 9},
-    {ASM_INSTR_JMP, 3},
-    {ASM_INSTR_BEQ, 3},
-    {ASM_INSTR_BNE, 3},
-    {ASM_INSTR_BGT, 3},
-    {ASM_INSTR_PUSH, 8},
-    {ASM_INSTR_POP, 9},
-    {ASM_INSTR_XCHG, 4},
-    {ASM_INSTR_ADD, 5},
-    {ASM_INSTR_SUB, 5},
-    {ASM_INSTR_MUL, 5},
-    {ASM_INSTR_DIV, 5},
-    {ASM_INSTR_NOT, 6},
-    {ASM_INSTR_AND, 6},
-    {ASM_INSTR_OR, 6},
-    {ASM_INSTR_XOR, 6},
-    {ASM_INSTR_SHL, 7},
-    {ASM_INSTR_SHR, 7},
-    {ASM_INSTR_LD, 9},
-    {ASM_INSTR_ST, 8},
-    {ASM_INSTR_CSRRD, 9},
-    {ASM_INSTR_CSRWR, 9},
-};
-
-char operation_to_mod[][2] = {
-    {ASM_INSTR_HALT, 0},
-    {ASM_INSTR_INT, 0},
-    {ASM_INSTR_RET, 3},
-    {ASM_INSTR_PUSH, 1},
-    {ASM_INSTR_POP, 3},
-    {ASM_INSTR_XCHG, 0},
-    {ASM_INSTR_ADD, 0},
-    {ASM_INSTR_SUB, 1},
-    {ASM_INSTR_MUL, 2},
-    {ASM_INSTR_DIV, 3},
-    {ASM_INSTR_NOT, 0},
-    {ASM_INSTR_AND, 1},
-    {ASM_INSTR_OR, 2},
-    {ASM_INSTR_XOR, 3},
-    {ASM_INSTR_SHL, 0},
-    {ASM_INSTR_SHR, 1},
-    {ASM_INSTR_CSRRD, 0},
-    {ASM_INSTR_CSRWR, 4},
-};
-
 int handle_halt(s_asm_line* line, s_section* s)
 {
     if (s == 0)
@@ -135,20 +85,26 @@ int handle_call(s_asm_line* line, s_section* s)
     long disp;
     if (line->o_jmp.is_symbol)
     {
-        int indx = check_symbol_table(line->o_jmp.symbol);
+        int indx = get_and_set_reference(line->o_jmp.symbol);
         if (indx == -1)
         {
-            // for now error, but will need to add the instruction to a second pass, and save the location of this
-            return -1;
-        }
-
-        if (!check_if_symbol_can_be_jumped_to(line->o_jmp.symbol))
-        {
-            printf("ERROR: call operand: symbol %s cannot be jumped to!\n", line->o_jmp.symbol);
+            printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
             return -1;
         }
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+
+        if (sym->type == STT_NOTYPE)
+        {
+            // add this instruction for for later cleanup
+            char bin[INSTRUCTION_BYTE_LEN];
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            // ex. add_to_later_cleanup(line);
+            return 0;
+        }
 
         // in the same section, we try to fit in 12b, if not can_fit = false after if
         bool can_fit = false;
@@ -231,20 +187,26 @@ int handle_branch(s_asm_line* line, s_section* s)
     long disp;
     if (line->o_jmp.is_symbol)
     {
-        int indx = check_symbol_table(line->o_jmp.symbol);
+        int indx = get_and_set_reference(line->o_jmp.symbol);
         if (indx == -1)
         {
-            // for now error, but will need to add the instruction to a second pass, and save the location of this
-            return -1;
-        }
-
-        if (!check_if_symbol_can_be_jumped_to(line->o_jmp.symbol))
-        {
-            printf("ERROR: call operand: symbol %s cannot be jumped to!\n", line->o_jmp.symbol);
+            printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
             return -1;
         }
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+
+        if (sym->type == STT_NOTYPE)
+        {
+            // add this instruction for for later cleanup
+            char bin[INSTRUCTION_BYTE_LEN];
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            // ex. add_to_later_cleanup(line);
+            return 0;
+        }
 
         // in the same section, we try to fit in 12b, if not can_fit = false after if
         bool can_fit = false;
@@ -684,221 +646,4 @@ int handle_control_rw(s_asm_line* line, s_section* s)
     free(bin);
 
     return 0;
-}
-
-int handle_extern(s_asm_line* line, s_section* s)
-{
-    int n = line->symbol_list_n;
-    for (int i = 0; i < n; i++)
-    {
-        if (check_symbol_table(line->symbol_list[i]) != -1)
-        {
-            printf("ERROR: symbol %s already defined, cannot be declared as an extern symbol!\n", line->symbol_list[i]);
-            return -1;
-        }
-        add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
-    }
-    return 0;
-}
-
-int handle_global(s_asm_line* line, s_section* s)
-{
-    int n = line->symbol_list_n;
-    for (int i = 0; i < n; i++)
-    {
-        int indx = check_symbol_table(line->symbol_list[i]);
-        if (indx != -1)
-        {
-            if (p.sym_table->symbols[indx]->type == STT_SECTION)
-            {
-                printf("ERROR: Symbol %s is a section, it cannot be declared as a global symbol!\n", line->symbol_list[i]);
-                return -1;
-            }
-            else
-            {
-                p.sym_table->symbols[indx]->binding = STB_GLOBAL;
-            }
-        }
-        else
-            add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_GLOBAL);
-    }
-    return 0;
-}
-
-int handle_section(s_asm_line* line, s_section* s)
-{
-    if (s != 0)
-        update_section_size_in_sym_table(s);
-
-    s_section* created_section = new_section(line->section_name);
-    p.curr_section = created_section;
-    add_to_symbol_table(line->section_name, STT_SECTION, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
-}
-
-int handle_word(s_asm_line* line, s_section* s)
-{
-    if (s == 0)
-    {
-        printf("ERROR: Directive .word used outside of a section!\n");
-        return -1;
-    }
-
-    update_label_size_if_last(s, line->sym_or_lit_list_n * WORD_SIZE);
-
-    int n = line->sym_or_lit_list_n;
-    for (int i = 0; i < n; i++)
-    {
-        if (line->sym_or_lit_list[i]->is_literal)
-        {
-            long literal = line->sym_or_lit_list[i]->literal;
-            char bytes[4];
-            bytes[0] = literal & 0xFF;
-            bytes[1] = (literal >> 8) & 0xFF;
-            bytes[2] = (literal >> 16) & 0xFF;
-            bytes[3] = (literal >> 24) & 0xFF;
-            write_bytes_to_section(s, bytes, 4);
-        }
-        else if (line->sym_or_lit_list[i]->is_symbol)
-        {
-            int indx = check_symbol_table(line->sym_or_lit_list[i]->symbol);
-            if (indx == -1)
-            {
-                add_to_symbol_table(line->sym_or_lit_list[i]->symbol, 0, 0, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_REFERENCE);
-                indx = p.sym_table->symbol_num - 1;
-            }
-
-            s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-            // create relocation for this symbol
-            // for now just skip
-            skip_bytes_in_section(s, WORD_SIZE);
-        }
-    }
-    return 0;
-}
-
-int handle_skip(s_asm_line* line, s_section* s)
-{
-    if (s == 0)
-    {
-        printf("ERROR: Directive .skip used outside of a section!\n");
-        return -1;
-    }
-
-    update_label_size_if_last(s, line->byte_num);
-
-    skip_bytes_in_section(s, line->byte_num);
-    return 0;
-}
-
-int handle_ascii(s_asm_line* line, s_section* s)
-{
-    if (s == 0)
-    {
-        printf("ERROR: Directive .ascii used outside of a section!\n");
-        return -1;
-    }
-
-    update_label_size_if_last(s, strlen(line->ascii_string) + 1);
-
-    write_bytes_to_section(s, line->ascii_string, strlen(line->ascii_string));
-    return 0;
-}
-
-int handle_equ(s_asm_line* line, s_section* s)
-{
-    return 0;
-}
-
-int handle_end(s_asm_line* line, s_section* s)
-{
-    if (s == 0)
-    {
-        printf("ERROR: .end has no section to end!\n");
-        return -1;
-    }
-    p.curr_section = 0;
-    return 0;
-}
-
-int handle_label(s_asm_line* line, s_section* s)
-{
-    if (s == 0)
-    {
-        printf("ERROR: Label %s defined outside of a section!\n", line->symbol);
-        return -1;
-    }
-
-    int indx = check_symbol_table(line->symbol);
-    if (indx == -1)
-    {
-        add_to_symbol_table(line->symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0, ST_ENTRY_STATE_COMPLETE);
-    }
-    else
-    {
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        if (sym->state == ST_ENTRY_STATE_COMPLETE)
-        {
-            printf("ERROR: symbol %s already defined defined!\n", line->symbol);
-            return -1;
-        }
-
-        if (sym->state != ST_ENTRY_STATE_PARTIAL_GLOBAL)
-            sym->binding = STB_LOCAL;
-
-        sym->type = STT_NOTYPE;
-        sym->visibility = STV_DEFAULT;
-        sym->section = s;
-        sym->st_value = s->next_free;
-        sym->st_size = 0;
-    }
-
-    // sym size needs to be set only if the next directive is ascii, word or skip
-    return 0;
-}
-
-char* translate_to_binary(char oc, char mod, char reg_a, char reg_b, char reg_c, long disp)
-{
-    char* bin = (char*)malloc(sizeof(char)*INSTRUCTION_BYTE_LEN);
-    // OC MOD - byte 0
-    bin[0] = mod | (oc << 4);
-    // regA regB - byte 1
-    bin[1] = reg_b | (reg_a << 4);
-    // regC DISP - byte 2
-    bin[2] = ((disp >> 8) & 0b1111) | (reg_c << 4);
-    // DISP DISP - byte 3
-    bin[3] = disp & 0b11111111;
-
-    return bin;
-}
-
-// just placeholder
-bool expr_is_valid(s_expr* expression, s_section* curr_section)
-{
-    return true;
-}
-
-// just placeholder
-long calculate_expression(s_expr* expression)
-{
-    return 0;
-}
-
-char find_operation_code(e_asm_instruction instr)
-{
-    for (int i = 0; i < sizeof(operation_to_oc) / sizeof(operation_to_oc[0]); i++) {
-        if (operation_to_oc[i][0] == instr) {
-            return operation_to_oc[i][1];
-        }
-    }
-    return -1; // not found
-}
-
-char find_operation_mod(s_asm_line* line)
-{
-    for (int i = 0; i < sizeof(operation_to_mod) / sizeof(operation_to_mod[0]); i++) {
-        if (operation_to_mod[i][0] == line->instruction) {
-            return operation_to_mod[i][1];
-        }
-    }
-    return -1; // not found
 }

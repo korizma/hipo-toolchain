@@ -2,6 +2,7 @@
 #define CODE_H
 
 #include <stdbool.h>
+#include "elf.h"
 
 typedef enum {
     EXPR_LITERAL,
@@ -151,6 +152,10 @@ typedef struct
     // for word
     s_sym_or_lit** sym_or_lit_list;
     int sym_or_lit_list_n;
+
+    // for later relocation cleanup
+    s_section* section_location;
+    int bytes_location;
 
 } s_asm_line;
 
