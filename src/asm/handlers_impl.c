@@ -58,6 +58,12 @@ char operation_to_mod[][2] = {
 
 int handle_halt(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction halt defined outside of a section!\n");
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char* bin = translate_to_binary(oc, 0, 0, 0, 0, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
@@ -67,6 +73,12 @@ int handle_halt(s_asm_line* line, s_section* s)
 
 int handle_int(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char* bin = translate_to_binary(oc, 0, 0, 0, 0, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
@@ -76,11 +88,17 @@ int handle_int(s_asm_line* line, s_section* s)
 
 int handle_iret(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     // pop status
     // A <= mem32[B], B <= B + D, status <= mem32[sp], sp <= sp + 4
     char oc1 = 0b1001;
     char mod1 = 0b0011;
-    char regA1 = ASM_REG_STATUS;
+    char regA1 = ASM_REG_STATUS % 16;
     char regB1 = ASM_REG_SP;
     long disp1 = 4;
 
@@ -107,6 +125,12 @@ int handle_iret(s_asm_line* line, s_section* s)
 
 int handle_call(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = 0b0010, mod, regA, regB;
     long disp;
     if (line->o_jmp.is_symbol)
@@ -167,6 +191,12 @@ int handle_call(s_asm_line* line, s_section* s)
 
 int handle_ret(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     // pop pc
     // A <= mem32[B], B <= B + D, status <= mem32[sp], sp <= sp + 4
     char op = 0b1001;
@@ -185,6 +215,12 @@ int handle_ret(s_asm_line* line, s_section* s)
 
 int handle_branch(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = 0b0011, mod, regA, regB = line->reg1, regC = line->reg2;
 
     if (line->instruction == ASM_INSTR_JMP)
@@ -268,6 +304,12 @@ int handle_branch(s_asm_line* line, s_section* s)
 
 int handle_push(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     // write to sp - 4, because sp points to the top of the stack that is occupied
     // push reg <=> ld reg, [sp - 4]; sp = sp - 4;
     // instead of one instruction, we need 2 operations
@@ -300,6 +342,12 @@ int handle_push(s_asm_line* line, s_section* s)
 
 int handle_pop(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     // reg <= mem[sp]; sp <= sp + 4;
     // A <= mem32[B], B <= B + D, reg <= mem32[sp], sp <= sp + 4
     char op = 0b1001;
@@ -314,6 +362,12 @@ int handle_pop(s_asm_line* line, s_section* s)
 
 int handle_xchg(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
 
     char* bin = translate_to_binary(oc, 0, 0, line->reg1, line->reg2, 0);
@@ -326,10 +380,16 @@ int handle_xchg(s_asm_line* line, s_section* s)
 
 int handle_arthm(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char mod = find_operation_mod(line);
 
-    char* bin = translate_to_binary(oc, mod, line->reg1, line->reg1, line->reg2, 0);
+    char* bin = translate_to_binary(oc, mod, line->reg2, line->reg2, line->reg1, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
     free(bin);
@@ -339,6 +399,12 @@ int handle_arthm(s_asm_line* line, s_section* s)
 
 int handle_not(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char mod = find_operation_mod(line);
 
@@ -352,10 +418,16 @@ int handle_not(s_asm_line* line, s_section* s)
 
 int handle_logic(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char mod = find_operation_mod(line);
 
-    char* bin = translate_to_binary(oc, mod, line->reg1, line->reg1, line->reg2, 0);
+    char* bin = translate_to_binary(oc, mod, line->reg2, line->reg2, line->reg1, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
     free(bin);
@@ -365,10 +437,16 @@ int handle_logic(s_asm_line* line, s_section* s)
 
 int handle_sh(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = find_operation_code(line->instruction);
     char mod = find_operation_mod(line);
 
-    char* bin = translate_to_binary(oc, mod, line->reg1, line->reg1, line->reg2, 0);
+    char* bin = translate_to_binary(oc, mod, line->reg2, line->reg2, line->reg1, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
     free(bin);
@@ -379,6 +457,12 @@ int handle_sh(s_asm_line* line, s_section* s)
 // ld operand, reg1 <=> reg1 <= operand
 int handle_ld(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = 0b1001, mod, regA = 0, regB = 0, regC = 0;
     long disp = 0;
 
@@ -461,7 +545,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         disp = line->o_ls.literal & 0xFFF; 
     }
-    else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_LITERAL)
+    else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_SYMBOL)
     {
         // A <= mem32[B + C + D]
         mod = 0b0010;
@@ -482,6 +566,12 @@ int handle_ld(s_asm_line* line, s_section* s)
 // st reg, operand; operand <= return 
 int handle_st(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     char oc = 0b1000, mod, regA = 0, regB = 0, regC = 0;
     long disp = 0;
 
@@ -553,7 +643,7 @@ int handle_st(s_asm_line* line, s_section* s)
 
         disp = line->o_ls.literal & 0xFFF; 
     }
-    else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_LITERAL)
+    else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_SYMBOL)
     {
         // mem[A + B + D] <= C
         mod = 0b0000;
@@ -578,30 +668,21 @@ int handle_st(s_asm_line* line, s_section* s)
 // reg1 = gpr, reg2 = csr
 int handle_control_rw(s_asm_line* line, s_section* s)
 {
+    if (s == 0)
+    {
+        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
+        return -1;
+    }
+
     // A<=B
     char oc = find_operation_code(line->instruction);
     char mod = find_operation_mod(line);
-    char regA = line->reg2, regB = line->reg1;
+    char regA = line->reg2 % 16, regB = line->reg1 % 16;
     char* bin = translate_to_binary(oc, mod, regA, regB, 0, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
     free(bin);
 
-    return 0;
-}
-
-int handle_global(s_asm_line* line, s_section* s)
-{
-    int n = line->symbol_list_n;
-    for (int i = 0; i < n; i++)
-    {
-        if (check_symbol_table(line->symbol_list[i]) != -1)
-        {
-            printf("ERROR: symbol %s already defined, cannot be extern!\n", line->symbol_list[i]);
-            return -1;
-        }
-        add_to_symbol_table(line->symbol_list[i], -1, STB_GLOBAL, STV_DEFAULT, (s_section*)-1, -1, -1);
-    }
     return 0;
 }
 
@@ -612,38 +693,57 @@ int handle_extern(s_asm_line* line, s_section* s)
     {
         if (check_symbol_table(line->symbol_list[i]) != -1)
         {
-            printf("ERROR: symbol %s already defined, cannot be extern!\n", line->symbol_list[i]);
+            printf("ERROR: symbol %s already defined, cannot be declared as an extern symbol!\n", line->symbol_list[i]);
             return -1;
         }
-        add_to_symbol_table(line->symbol_list[i], STT_NOTYPE, STB_GLOBAL, STV_DEFAULT, 0, 0, 0);
+        add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
+    }
+    return 0;
+}
+
+int handle_global(s_asm_line* line, s_section* s)
+{
+    int n = line->symbol_list_n;
+    for (int i = 0; i < n; i++)
+    {
+        int indx = check_symbol_table(line->symbol_list[i]);
+        if (indx != -1)
+        {
+            if (p.sym_table->symbols[indx]->type == STT_SECTION)
+            {
+                printf("ERROR: Symbol %s is a section, it cannot be declared as a global symbol!\n", line->symbol_list[i]);
+                return -1;
+            }
+            else
+            {
+                p.sym_table->symbols[indx]->binding = STB_GLOBAL;
+            }
+        }
+        else
+            add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_GLOBAL);
     }
     return 0;
 }
 
 int handle_section(s_asm_line* line, s_section* s)
 {
-    add_to_symbol_table(s->name, STT_SECTION, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
-    add_section_to_program(s);
-    if (find_section_index(line->section_name) == -1)
-    {
-        p.curr_section = new_section(line->section_name);
-    }
-    else
-    {
-        printf("ERROR: section %s already defined!\n", line->section_name);
-        return -1;
-    }
-    return 0;
+    if (s != 0)
+        update_section_size_in_sym_table(s);
+
+    s_section* created_section = new_section(line->section_name);
+    p.curr_section = created_section;
+    add_to_symbol_table(line->section_name, STT_SECTION, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
 }
 
 int handle_word(s_asm_line* line, s_section* s)
 {
-    int indx = find_label_in_section_if_last(s);
-    if (indx != -1)
+    if (s == 0)
     {
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        sym->st_size = WORD_SIZE * line->sym_or_lit_list_n;
+        printf("ERROR: Directive .word used outside of a section!\n");
+        return -1;
     }
+
+    update_label_size_if_last(s, line->sym_or_lit_list_n * WORD_SIZE);
 
     int n = line->sym_or_lit_list_n;
     for (int i = 0; i < n; i++)
@@ -663,9 +763,8 @@ int handle_word(s_asm_line* line, s_section* s)
             int indx = check_symbol_table(line->sym_or_lit_list[i]->symbol);
             if (indx == -1)
             {
-                printf("temp ERROR: word operand: symbol %s not defined!\n", line->sym_or_lit_list[i]->symbol);
-                // for now error, but will need to add the instruction to a second pass, and save the location of this
-                return -1;
+                add_to_symbol_table(line->sym_or_lit_list[i]->symbol, 0, 0, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_REFERENCE);
+                indx = p.sym_table->symbol_num - 1;
             }
 
             s_Elf64_Sym* sym = p.sym_table->symbols[indx];
@@ -679,24 +778,27 @@ int handle_word(s_asm_line* line, s_section* s)
 
 int handle_skip(s_asm_line* line, s_section* s)
 {
-    int indx = find_label_in_section_if_last(s);
-    if (indx != -1)
+    if (s == 0)
     {
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        sym->st_size = line->byte_num;
+        printf("ERROR: Directive .skip used outside of a section!\n");
+        return -1;
     }
+
+    update_label_size_if_last(s, line->byte_num);
+
     skip_bytes_in_section(s, line->byte_num);
     return 0;
 }
 
 int handle_ascii(s_asm_line* line, s_section* s)
 {
-    int indx = find_label_in_section_if_last(s);
-    if (indx != -1)
+    if (s == 0)
     {
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        sym->st_size = strlen(line->ascii_string);
+        printf("ERROR: Directive .ascii used outside of a section!\n");
+        return -1;
     }
+
+    update_label_size_if_last(s, strlen(line->ascii_string) + 1);
 
     write_bytes_to_section(s, line->ascii_string, strlen(line->ascii_string));
     return 0;
@@ -709,44 +811,45 @@ int handle_equ(s_asm_line* line, s_section* s)
 
 int handle_end(s_asm_line* line, s_section* s)
 {
-    add_to_symbol_table(s->name, STT_SECTION, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
-    add_section_to_program(s);
+    if (s == 0)
+    {
+        printf("ERROR: .end has no section to end!\n");
+        return -1;
+    }
     p.curr_section = 0;
     return 0;
 }
 
 int handle_label(s_asm_line* line, s_section* s)
 {
-    char type = STT_NOTYPE;
-    if (s > 0 && strcmp(s->name, "common") == 0)
-        type = STT_COMMON;
-    int indx = check_symbol_table(line->symbol);
+    if (s == 0)
+    {
+        printf("ERROR: Label %s defined outside of a section!\n", line->symbol);
+        return -1;
+    }
 
+    int indx = check_symbol_table(line->symbol);
     if (indx == -1)
     {
-        add_to_symbol_table(line->symbol, type, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0);
+        add_to_symbol_table(line->symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0, ST_ENTRY_STATE_COMPLETE);
     }
     else
     {
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        if (sym->type != -1)
+        if (sym->state == ST_ENTRY_STATE_COMPLETE)
         {
-            printf("ERROR: symbol %s already defined, cannot be redefined!\n", line->symbol);
+            printf("ERROR: symbol %s already defined defined!\n", line->symbol);
             return -1;
         }
 
-        if (sym->binding == -1)
+        if (sym->state != ST_ENTRY_STATE_PARTIAL_GLOBAL)
             sym->binding = STB_LOCAL;
-        if (sym->visibility == -1)
-            sym->visibility = STV_DEFAULT;
-        if (sym->section == (s_section*)-1)
-            sym->section = s;
-        if (sym->st_value == -1)
-            sym->st_value = s->next_free;
-        if (sym->st_size == -1)
-            sym->st_size = 0;
-        if (sym->type == -1)
-            sym->type = type;
+
+        sym->type = STT_NOTYPE;
+        sym->visibility = STV_DEFAULT;
+        sym->section = s;
+        sym->st_value = s->next_free;
+        sym->st_size = 0;
     }
 
     // sym size needs to be set only if the next directive is ascii, word or skip
@@ -756,14 +859,14 @@ int handle_label(s_asm_line* line, s_section* s)
 char* translate_to_binary(char oc, char mod, char reg_a, char reg_b, char reg_c, long disp)
 {
     char* bin = (char*)malloc(sizeof(char)*INSTRUCTION_BYTE_LEN);
-    // OC MOD - byte 3
-    bin[3] = mod | (oc << 4);
-    // regA regB - byte 2
+    // OC MOD - byte 0
+    bin[0] = mod | (oc << 4);
+    // regA regB - byte 1
     bin[1] = reg_b | (reg_a << 4);
-    // regC DISP - byte 1
-    bin[3] = ((disp >> 8) & 0b11111111) | (reg_c << 4);
-    // DISP DISP - byte 0
-    bin[0] = disp & 0b11111111;
+    // regC DISP - byte 2
+    bin[2] = ((disp >> 8) & 0b1111) | (reg_c << 4);
+    // DISP DISP - byte 3
+    bin[3] = disp & 0b11111111;
 
     return bin;
 }
@@ -793,8 +896,8 @@ char find_operation_code(e_asm_instruction instr)
 char find_operation_mod(s_asm_line* line)
 {
     for (int i = 0; i < sizeof(operation_to_mod) / sizeof(operation_to_mod[0]); i++) {
-        if (operation_to_oc[i][0] == line->instruction) {
-            return operation_to_oc[i][1];
+        if (operation_to_mod[i][0] == line->instruction) {
+            return operation_to_mod[i][1];
         }
     }
     return -1; // not found

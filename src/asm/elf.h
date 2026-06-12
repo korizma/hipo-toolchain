@@ -27,16 +27,7 @@ typedef enum
 typedef enum 
 {
     STT_NOTYPE = 0,
-    STT_OBJECT = 1,
-    STT_FUNC = 2,
     STT_SECTION = 3,
-    STT_FILE = 4,
-    STT_COMMON = 5,
-    STT_TLS = 6,
-    STT_LOOS = 10,
-    STT_HIOS = 12,
-    STT_LOPROC = 13,
-    STT_HIPROC = 15
 } e_Elf64_SymbolType;
 
 typedef enum 
@@ -57,7 +48,8 @@ typedef enum
 
 typedef struct s_section s_section;
 
-typedef struct {
+typedef struct 
+{
     unsigned long r_offset;    // offset in the section to replace
     int sym_index;    // symbol index in the symbol table
     e_Elf64_reloc_type reloc_type;  // relocation entry type
@@ -71,6 +63,14 @@ typedef struct
     int entry_num, size;
 } s_rela_table;
 
+typedef enum
+{
+    ST_ENTRY_STATE_EMPTY,
+    ST_ENTRY_STATE_PARTIAL_GLOBAL,
+    ST_ENTRY_STATE_PARTIAL_REFERENCE,
+    ST_ENTRY_STATE_COMPLETE
+} e_Elf64_symbol_entry_state;
+
 typedef struct {
     char*    st_name;        // symbol name
     e_Elf64_SymbolType type;
@@ -79,6 +79,9 @@ typedef struct {
     s_section* section;      // s_section index
     long    st_value;        // symbol value/address/offset
     long   st_size;          // symbol size in bytes
+
+    // for assembly
+    e_Elf64_symbol_entry_state state;
 } s_Elf64_Sym;
 
 typedef struct 
@@ -113,7 +116,9 @@ void skip_bytes_in_section(s_section* s, int num);
 
 int find_section_index(char* name);
 
-int find_label_in_section_if_last(s_section* s);
+void update_label_size_if_last(s_section* s, int size);
+
+void update_section_size_in_sym_table(s_section* s);
 
 void init_program();
 
@@ -127,7 +132,9 @@ void add_to_symbol_table(   char* symbol,
                             e_Elf64_SymbolVisibility visibility, 
                             s_section* section, 
                             long sym_offset,
-                            long sym_size );
+                            long sym_size,
+                            e_Elf64_symbol_entry_state state
+                        );
 
 int check_symbol_table(char* symbol);
 

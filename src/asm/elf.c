@@ -59,17 +59,6 @@ int find_section_index(char* name)
 }
 
 
-int find_label_in_section_if_last(s_section* s)
-{
-    for (int i = 0; i < p.sym_table->symbol_num; i++)
-    {
-        s_Elf64_Sym* sym = p.sym_table->symbols[i];
-        if (sym->section == s && sym->st_value == s->next_free)
-            return i;
-    }
-    return -1;
-}
-
 void export_program_to_elf()
 {
     
@@ -97,7 +86,9 @@ void add_to_symbol_table(   char* symbol,
                             e_Elf64_SymbolVisibility visibility, 
                             s_section* section, 
                             long sym_offset,
-                            long sym_size )
+                            long sym_size,
+                            e_Elf64_symbol_entry_state state
+                            )
 {
     if (p.sym_table->symbol_num == p.sym_table->size)
     {
@@ -112,6 +103,7 @@ void add_to_symbol_table(   char* symbol,
     new_entry->st_size = sym_size;
     new_entry->st_value = sym_offset;
     new_entry->st_name = symbol;
+    new_entry->state = state;
     p.sym_table->symbols[p.sym_table->symbol_num++] = new_entry;
 }
 
@@ -140,4 +132,15 @@ void create_rela_table(s_section* s)
     s->rela_table->entry_num = 0;
     s->rela_table->entries = (s_Elf64_Rela_entry**)malloc(sizeof(s_Elf64_Rela_entry*) * s->rela_table->size);
     s->rela_table->section = s;
+}
+
+
+void update_label_size_if_last(s_section* s, int size)
+{
+
+}
+
+void update_section_size_in_sym_table(s_section* s)
+{
+    
 }
