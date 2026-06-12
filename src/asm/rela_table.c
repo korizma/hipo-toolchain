@@ -1,5 +1,6 @@
 #include "rela_table.h"
 #include "section.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 void create_rela_table(s_section* s)
@@ -18,7 +19,7 @@ void create_rela_entry(s_section* s, unsigned long offset, int sym_index, e_Elf6
         create_rela_table(s);
     }
 
-    if (s->rela_table->entry_num == s->rela_table->entry_num)
+    if (s->rela_table->entry_num == s->rela_table->size)
     {
         s->rela_table->size += RELA_TABLE_INCREMENT;
         s->rela_table->entries = realloc(s->rela_table->entries, sizeof(s_Elf64_Rela_entry*) * s->rela_table->size);
@@ -33,3 +34,47 @@ void create_rela_entry(s_section* s, unsigned long offset, int sym_index, e_Elf6
     s->rela_table->entries[s->rela_table->entry_num++] = new_entry;
 }
 
+static const char* rela_type_name(e_Elf64_reloc_type type)
+{
+    switch (type)
+    {
+    case R_HIPO_NONE: return "R_HIPO_NONE";
+    case R_HIPO_32: return "R_HIPO_32";
+    case R_HIPO_12: return "R_HIPO_12";
+    case R_HIPO_PC12: return "R_HIPO_PC12";
+    }
+
+    return "R_HIPO_UNKNOWN";
+}
+
+void print_rela_table(s_rela_table* rela_table)
+{
+    if (rela_table == 0)
+    {
+        printf("  Rela table: <none>\n");
+        return;
+    }
+
+    printf("  Rela table for section %s: entries=%d, capacity=%d\n",
+           rela_table->section != 0 ? rela_table->section->name : "<none>",
+           rela_table->entry_num,
+           rela_table->size);
+    printf("    %-8s %-8s %-14s %s\n", "Offset", "Sym", "Type", "Addend");
+
+    for (int i = 0; i < rela_table->entry_num; i++)
+    {
+        s_Elf64_Rela_entry* entry = rela_table->entries[i];
+
+        if (entry == 0)
+        {
+            printf("    <null entry>\n");
+            continue;
+        }
+
+        printf("    0x%06lx %-8d %-14s %ld\n",
+               entry->r_offset,
+               entry->sym_index,
+               rela_type_name(entry->reloc_type),
+               entry->r_addend);
+    }
+}

@@ -35,7 +35,7 @@ void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directi
 
 void register_handler_struct(s_handler_entry* entry);
 
-void handle_line(s_asm_line* line);
+int handle_line(s_asm_line* line);
 
 void register_init_handlers();
 

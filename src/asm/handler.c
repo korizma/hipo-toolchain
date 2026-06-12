@@ -65,27 +65,25 @@ void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directi
     h_arr.entries[h_arr.next_avail++] = new_entry;
 }
 
-void handle_line(s_asm_line* line)
+int handle_line(s_asm_line* line)
 {
     for (int i = 0; i < h_arr.next_avail; i++) 
     {
         s_handler_entry* entry = h_arr.entries[i];
         if (entry->kind == HANDLER_LABEL && line->is_label) 
         {
-            entry->handler(line, p.curr_section);
-            return;
+            return entry->handler(line, p.curr_section);
         }
         else if (entry->kind == HANDLER_INSTRUCTION && line->is_instruction && entry->instruction == line->instruction) 
         {
-            entry->handler(line, p.curr_section);
-            return;
+            return entry->handler(line, p.curr_section);
         }
         else if (entry->kind == HANDLER_DIRECTIVE && line->is_directive && entry->directive == line->directive) 
         {
-            entry->handler(line, p.curr_section);
-            return;
+            return entry->handler(line, p.curr_section);
         }
     }
+    return -1;
 }
 
 void register_init_handlers()

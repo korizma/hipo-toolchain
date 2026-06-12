@@ -3,9 +3,9 @@
 #include "string.h"
 #include "helper.h"
 #include "stdio.h"
+#include "../asm/asm_main.h"
 
-extern s_asm_line* lines[];
-extern int curr_line;
+extern s_asm_file asm_file;
 
 
 s_expr* expr_literal(int value) {
@@ -45,7 +45,12 @@ s_asm_line* new_empty_line()
 
 void add_line(s_asm_line* line)
 {
-    lines[curr_line++] = line;
+    if (asm_file.curr_line == asm_file.size)
+    {
+        asm_file.size += ASM_LINES_INCREMENT;
+        asm_file.lines = realloc(asm_file.lines, asm_file.size * sizeof(s_asm_line*));
+    }
+    asm_file.lines[asm_file.curr_line++] = line;
 }
 
 e_asm_register reg_from_name(char* reg)

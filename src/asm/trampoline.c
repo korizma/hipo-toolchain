@@ -1,4 +1,5 @@
 #include "trampoline.h"
+#include <stdio.h>
 #include <stdlib.h>
 
 s_trampoline trampoline;
@@ -31,4 +32,54 @@ void add_trampoline_entry(s_section* s, s_asm_line* line, long literal, char* sy
 void write_trampolines()
 {
     // this will be implemented later
+}
+
+static const char* trampoline_type_name(e_trampoline_entry_type type)
+{
+    switch (type)
+    {
+    case TRAMPOLINE_ENTRY_SYMBOL: return "SYMBOL";
+    case TRAMPOLINE_ENTRY_LITERAL: return "LITERAL";
+    }
+
+    return "UNKNOWN";
+}
+
+void print_trampoline()
+{
+    printf("Trampoline: entries=%d, capacity=%d\n", trampoline.entry_num, trampoline.size);
+    printf("  %-8s %-16s %-12s %s\n", "Type", "Section", "Value", "Line");
+
+    for (int i = 0; i < trampoline.entry_num; i++)
+    {
+        s_trampoline_entry* entry = trampoline.entries[i];
+
+        if (entry == 0)
+        {
+            printf("  <null entry>\n");
+            continue;
+        }
+
+        printf("  %-8s %-16s ",
+               trampoline_type_name(entry->type),
+               entry->section != 0 ? entry->section->name : "<none>");
+
+        if (entry->type == TRAMPOLINE_ENTRY_SYMBOL)
+        {
+            printf("%-12s ", entry->symbol != 0 ? entry->symbol : "<none>");
+        }
+        else
+        {
+            printf("%-12ld ", entry->literal);
+        }
+
+        if (entry->line != 0)
+        {
+            print_asm_line(entry->line);
+        }
+        else
+        {
+            printf("<none>\n");
+        }
+    }
 }

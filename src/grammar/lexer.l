@@ -119,7 +119,7 @@ COMMENT #.*
 {GPRX}    {yylval.reg = strdup(yytext); return GPRX;}
 {CSRX}    {yylval.reg = strdup(yytext); return CSRX;}
 {COMMENT} ;
-{STRING}  {yylval.string = strdup(yytext); return STRING;}
+{STRING}  {yylval.string = strdup(yytext+1); yylval.string[strlen(yylval.string)-1] = 0; return STRING;}
 {LITERAL} {yylval.literal = parse_literal_lex(yytext); return LITERAL;}
 {SYMBOL}  {yylval.symbol = strdup(yytext); return SYMBOL;}
 

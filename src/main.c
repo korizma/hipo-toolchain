@@ -2,16 +2,18 @@
 #include "asm/code.h"
 
 #include "grammar/grammar.tab.h"
+#include "asm/asm_main.h"
 
 extern FILE *yyin;
 
 int yylex_destroy(void);
 
-s_asm_line* lines[1024];
-int curr_line = 0;
+extern s_asm_file asm_file;
 
 int main(int argc, char **argv)
 {
+    init_asm_file();
+
     if (argc < 2) {
         fprintf(stderr, "Usage: %s <input-file>\n", argv[0]);
         return 1;
@@ -32,10 +34,12 @@ int main(int argc, char **argv)
     fclose(yyin);
     yylex_destroy();
 
-    for (int i = 0; i < curr_line; i++)
+    for (int i = 0; i < asm_file.curr_line; i++)
     {
-        print_asm_line(lines[i]);
+        print_asm_line(asm_file.lines[i]);
     }
+
+    assemble_file("a");
 
     return 0;
 }

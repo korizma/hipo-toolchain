@@ -105,5 +105,5 @@ char find_operation_mod(s_asm_line* line)
 
 bool long_fit_in_12b(long a)
 {
-
+    return a >= -2048 && a <= 2047;
 }

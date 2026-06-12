@@ -35,4 +35,6 @@ void add_trampoline_entry(s_section* s, s_asm_line* line, long literal, char* sy
 
 void write_trampolines();
 
+void print_trampoline();
+
 #endif 

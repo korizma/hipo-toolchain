@@ -82,7 +82,7 @@ typedef enum {
 
 typedef struct s_expr {
     e_expr_kind kind;
-    int literal;
+    long literal;
     char* symbol;
     struct s_expr* left;
     struct s_expr* right;
@@ -119,7 +119,7 @@ typedef struct
 {
     bool is_literal, is_symbol;
     char* symbol;
-    int literal;
+    long literal;
 } s_sym_or_lit;
 
 typedef struct 

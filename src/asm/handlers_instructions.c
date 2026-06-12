@@ -87,13 +87,13 @@ int handle_call(s_asm_line* line, s_section* s)
     if (line->o_jmp.is_symbol)
     {
         int indx = get_and_set_reference(line->o_jmp.symbol);
-        if (indx == -1)
+
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        if (sym->type == STT_SECTION)
         {
             printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
             return -1;
         }
-
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
         // trampoline pool
         add_trampoline_entry(s, line, 0, sym->st_name, TRAMPOLINE_ENTRY_SYMBOL);
@@ -140,7 +140,7 @@ int handle_call(s_asm_line* line, s_section* s)
 
         return 0;
     }
-
+    return -1;
 }
 
 int handle_ret(s_asm_line* line, s_section* s)
@@ -186,14 +186,14 @@ int handle_branch(s_asm_line* line, s_section* s)
     if (line->o_jmp.is_symbol)
     {
         int indx = get_and_set_reference(line->o_jmp.symbol);
-        if (indx == -1)
+
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+
+        if (sym->type == STT_SECTION)
         {
             printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
             return -1;
         }
-
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-        
         
         // trampoline pool
         add_trampoline_entry(s, line, 0, sym->st_name, TRAMPOLINE_ENTRY_SYMBOL);
@@ -223,7 +223,13 @@ int handle_branch(s_asm_line* line, s_section* s)
         if (long_fit_in_12b(line->o_jmp.literal))
         {
             // literal small enough to fit in 12b 
-            mod = 0b0000;
+            switch(line->instruction)
+            {
+                case ASM_INSTR_BEQ: mod = 0b1001; break;
+                case ASM_INSTR_BGT: mod = 0b1011; break;
+                case ASM_INSTR_BNE: mod = 0b1010; break;
+                case ASM_INSTR_JMP: mod = 0b1000; break;
+            }
             regA = ASM_REG_PC;
             disp = line->o_jmp.literal & 0xFFF;
 
@@ -252,6 +258,7 @@ int handle_branch(s_asm_line* line, s_section* s)
 
         return 0;
     }
+    return -1;
 }
 
 int handle_push(s_asm_line* line, s_section* s)
@@ -261,33 +268,18 @@ int handle_push(s_asm_line* line, s_section* s)
         printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
         return -1;
     }
+    // OC=0x8 MOD=0x1 A=sp B=0 C=gpr D=-4
+    char op = 0b1000;
+    char mod = 0b0001;
+    char regA = ASM_REG_SP;
+    char regB= ASM_REG_R0;
+    char regC = line->reg1;
+    long disp = -4;
 
-    // sp = sp -4
-    // A <= B + D
-    char op1 = 0b1001;
-    char mod1 = 0b0001;
-    char regA1 = ASM_REG_SP;
-    char regB1 = ASM_REG_SP;
-    char regC1 = 0;
-    long disp1 = -4;
+    char* bin = translate_to_binary(op, mod, regA, regB, regC, disp);
+    write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-    char* bin1 = translate_to_binary(op1, mod1, regA1, regB1, regC1, disp1);
-    write_bytes_to_section(s, bin1, INSTRUCTION_BYTE_LEN);
-    
-    // mem[sp] = reg1
-    // mem[A + B + D] <= C
-    char op2 = 0b1001;
-    char mod2 = 0b0001;
-    char regA2 = ASM_REG_SP;
-    char regB2 = ASM_REG_R0;
-    char regC2 = line->reg1;
-    long disp2 = 0;
-
-    char* bin2 = translate_to_binary(op2, mod2, regA2, regB2, regC2, disp2);
-    write_bytes_to_section(s, bin2, INSTRUCTION_BYTE_LEN);
-
-    free(bin1);
-    free(bin2);
+    free(bin);
 
     return 0;
 }
@@ -307,9 +299,13 @@ int handle_pop(s_asm_line* line, s_section* s)
     char regA = line->reg1;
     char regB = ASM_REG_SP;
     long disp = 4;
+
     char* bin = translate_to_binary(op, mod, regA, regB, 0, disp);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
     free(bin);
+
+    return 0;
 }
 
 int handle_xchg(s_asm_line* line, s_section* s)
@@ -452,7 +448,11 @@ int handle_ld(s_asm_line* line, s_section* s)
         {
             // symbol is not global, so we need to use section as base
             // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = check_symbol_table(s->name);
+            int section_indx_in_sym_table = -1;
+            if (sym->section != 0)
+            {
+                section_indx_in_sym_table = check_symbol_table(sym->section->name);
+            }
             create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
         }
     }
@@ -490,7 +490,11 @@ int handle_ld(s_asm_line* line, s_section* s)
         {
             // symbol is not global, so we need to use section as base
             // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = check_symbol_table(s->name);
+            int section_indx_in_sym_table = -1;
+            if (sym->section != 0)
+            {
+                section_indx_in_sym_table = check_symbol_table(sym->section->name);
+            }
             create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
         }
     }
@@ -519,7 +523,7 @@ int handle_ld(s_asm_line* line, s_section* s)
         regB = line->o_ls.reg;
         regC = 0;
 
-        if (line->o_ls.literal != line->o_ls.literal & 0xFFF)
+        if (!long_fit_in_12b(line->o_ls.literal))
         {
             printf("ERROR: ld operand: REG INDIRECT LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
@@ -547,7 +551,11 @@ int handle_ld(s_asm_line* line, s_section* s)
         {
             // symbol is not global, so we need to use section as base
             // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = check_symbol_table(s->name);
+            int section_indx_in_sym_table = -1;
+            if (sym->section != 0)
+            {
+                section_indx_in_sym_table = check_symbol_table(sym->section->name);
+            }
             create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
         }
     }
@@ -617,7 +625,11 @@ int handle_st(s_asm_line* line, s_section* s)
         {
             // symbol is not global, so we need to use section as base
             // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = check_symbol_table(s->name);
+            int section_indx_in_sym_table = -1;
+            if (sym->section != 0)
+            {
+                section_indx_in_sym_table = check_symbol_table(sym->section->name);
+            }
             create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
         }
     }
@@ -676,7 +688,11 @@ int handle_st(s_asm_line* line, s_section* s)
         {
             // symbol is not global, so we need to use section as base
             // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = check_symbol_table(s->name);
+            int section_indx_in_sym_table = -1;
+            if (sym->section != 0)
+            {
+                section_indx_in_sym_table = check_symbol_table(sym->section->name);
+            }
             create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
         }
     }

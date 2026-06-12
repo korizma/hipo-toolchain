@@ -35,4 +35,6 @@ void create_rela_entry(s_section* s, unsigned long offset, int sym_index, e_Elf6
 
 s_section* create_section_from_rela_table(s_rela_table* rela_table);
 
+void print_rela_table(s_rela_table* rela_table);
+
 #endif

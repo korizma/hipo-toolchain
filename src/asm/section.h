@@ -20,4 +20,6 @@ void write_bytes_to_section(s_section* s, char* bytes, int num);
 
 void skip_bytes_in_section(s_section* s, int num);
 
+void print_section(s_section* section);
+
 #endif

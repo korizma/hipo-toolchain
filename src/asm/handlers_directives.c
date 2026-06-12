@@ -50,9 +50,20 @@ int handle_section(s_asm_line* line, s_section* s)
     if (s != 0)
         update_section_size_in_sym_table(s);
 
+    int indx = check_symbol_table(line->section_name);
+
+    if (indx != -1)
+    {
+        printf("ERROR: Section %s already defined!\n", line->section_name);
+        return -1;
+    }
+
     s_section* created_section = new_section(line->section_name);
+    add_section_to_program(created_section);
     p.curr_section = created_section;
     add_to_symbol_table(line->section_name, STT_SECTION, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
+
+    return 0;
 }
 
 int handle_word(s_asm_line* line, s_section* s)
@@ -96,9 +107,12 @@ int handle_word(s_asm_line* line, s_section* s)
             {
                 // symbol is not global, so we need to use section as base
                 // symbol maybe declared as global later, so this will could be changed when creating the rela table
-                int section_indx_in_sym_table = check_symbol_table(s->name);
+                int section_indx_in_sym_table = check_symbol_table(sym->section->name);
                 create_rela_entry(s, s->next_free, section_indx_in_sym_table, R_HIPO_32, sym->st_value);
             }
+
+            char bin[WORD_SIZE];
+            write_bytes_to_section(s, bin, WORD_SIZE);
         }
     }
     return 0;
@@ -126,7 +140,7 @@ int handle_ascii(s_asm_line* line, s_section* s)
         return -1;
     }
 
-    update_label_size_if_last(s, strlen(line->ascii_string) + 1);
+    update_label_size_if_last(s, strlen(line->ascii_string));
 
     write_bytes_to_section(s, line->ascii_string, strlen(line->ascii_string));
     return 0;
@@ -144,6 +158,8 @@ int handle_end(s_asm_line* line, s_section* s)
         printf("ERROR: .end has no section to end!\n");
         return -1;
     }
+    update_section_size_in_sym_table(s);
+
     p.curr_section = 0;
     return 0;
 }
@@ -178,6 +194,8 @@ int handle_label(s_asm_line* line, s_section* s)
         sym->section = s;
         sym->st_value = s->next_free;
         sym->st_size = 0;
+
+        sym->state = ST_ENTRY_STATE_COMPLETE;
     }
 
     // sym size needs to be set only if the next directive is ascii, word or skip

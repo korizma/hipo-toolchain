@@ -77,8 +77,5 @@ int get_and_set_reference(char* symbol)
     
     s_Elf64_Sym* sym = p.sym_table->symbols[indx];
     
-    if (sym->type = STT_SECTION)
-        return -1;
-
     return indx;
 }

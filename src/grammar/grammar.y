@@ -14,7 +14,7 @@ void yyerror(const char *message);
 
 
 %union {
-    int literal;
+    long literal;
     char* reg;
     char* symbol;
     char* string;
