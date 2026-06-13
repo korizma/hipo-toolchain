@@ -36,15 +36,6 @@ int main(int argc, char **argv)
     fclose(yyin);
     yylex_destroy();
 
-    for (int i = 0; i < asm_file.curr_line; i++)
-    {
-        char* line = asm_line_to_string(asm_file.lines[i]);
-        if (line != NULL) {
-            printf("%s", line);
-            free(line);
-        }
-    }
-
     assemble_file("a");
 
     return 0;

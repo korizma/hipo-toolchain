@@ -71,18 +71,6 @@ char* translate_to_binary(char oc, char mod, char reg_a, char reg_b, char reg_c,
     return bin;
 }
 
-// just placeholder
-bool expr_is_valid(s_expr* expression, s_section* curr_section)
-{
-    return true;
-}
-
-// just placeholder
-long calculate_expression(s_expr* expression)
-{
-    return 0;
-}
-
 char find_operation_code(e_asm_instruction instr)
 {
     for (int i = 0; i < sizeof(operation_to_oc) / sizeof(operation_to_oc[0]); i++) {

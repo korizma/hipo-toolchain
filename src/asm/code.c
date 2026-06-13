@@ -283,38 +283,48 @@ static char* expr_to_string(const s_expr* expression)
         return duplicate_string("<missing expression>");
     }
 
-    switch (expression->kind) {
-    case EXPR_LITERAL:
-        return format_to_string("%ld", expression->literal);
-    case EXPR_SYMBOL:
-        return duplicate_string(expression->symbol ? expression->symbol : "<missing symbol>");
-    case EXPR_NEG: {
-        char* left = expr_to_string(expression->left);
-        char* result = format_to_string("-%s", left ? left : "<missing expression>");
-        free(left);
-        return result;
-    }
-    case EXPR_ADD:
-    case EXPR_SUB:
-    case EXPR_MUL:
-    case EXPR_DIV: {
-        char* left = expr_to_string(expression->left);
-        char* right = expr_to_string(expression->right);
-        char op = expression->kind == EXPR_ADD ? '+'
-                : expression->kind == EXPR_SUB ? '-'
-                : expression->kind == EXPR_MUL ? '*'
-                                               : '/';
-        char* result = format_to_string("(%s %c %s)",
-                                        left ? left : "<missing expression>",
-                                        op,
-                                        right ? right : "<missing expression>");
-        free(left);
-        free(right);
-        return result;
-    }
+    s_string_builder builder;
+    string_builder_init(&builder);
+
+    bool has_term = false;
+    for (int i = 0; i < expression->symbol_num; i++) {
+        int coefficient = expression->symbol_coeff[i];
+        if (coefficient == 0) {
+            continue;
+        }
+
+        const char* symbol = expression->symbol_list[i] ? expression->symbol_list[i] : "<missing symbol>";
+        int magnitude = coefficient < 0 ? -coefficient : coefficient;
+
+        if (!has_term) {
+            if (coefficient < 0) {
+                string_builder_append(&builder, "-");
+            }
+        } else {
+            string_builder_append(&builder, coefficient < 0 ? " - " : " + ");
+        }
+
+        if (magnitude == 1) {
+            string_builder_append(&builder, symbol);
+        } else {
+            string_builder_appendf(&builder, "%d * %s", magnitude, symbol);
+        }
+
+        has_term = true;
     }
 
-    return duplicate_string("<missing expression>");
+    if (expression->value != 0 || !has_term) {
+        if (!has_term) {
+            string_builder_appendf(&builder, "%ld", expression->value);
+        } else if (expression->value > 0) {
+            string_builder_appendf(&builder, " + %ld", expression->value);
+        } else {
+            unsigned long magnitude = (unsigned long)(-(expression->value + 1)) + 1;
+            string_builder_appendf(&builder, " - %lu", magnitude);
+        }
+    }
+
+    return string_builder_take(&builder);
 }
 
 static char* symbol_list_to_string(char** symbols, int symbol_count)

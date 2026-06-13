@@ -7,37 +7,6 @@
 
 extern s_asm_file asm_file;
 
-
-s_expr* expr_literal(long value) {
-    s_expr* e = malloc(sizeof(s_expr));
-    e->kind = EXPR_LITERAL;
-    e->literal = value;
-    e->symbol = 0;
-    e->left = 0;
-    e->right = 0;
-    return e;
-}
-
-s_expr* expr_symbol(char* symbol) {
-    s_expr* e = malloc(sizeof(s_expr));
-    e->kind = EXPR_SYMBOL;
-    e->literal = 0;
-    e->symbol = symbol;
-    e->left = 0;
-    e->right = 0;
-    return e;
-}
-
-s_expr* expr_binary(e_expr_kind kind, s_expr* left, s_expr* right) {
-    s_expr* e = malloc(sizeof(s_expr));
-    e->kind = kind;
-    e->literal = 0;
-    e->symbol = 0;
-    e->left = left;
-    e->right = right;
-    return e;
-}
-
 s_asm_line* new_empty_line()
 {
     return (s_asm_line*)calloc(1, sizeof(s_asm_line));
@@ -156,4 +125,43 @@ long parse_literal_lex(char* lit) {
 void yyerror(const char *message)
 {
     fprintf(stderr, "Parser error: %s\n", message);
+}
+
+
+s_expr new_expr()
+{
+    s_expr expr;
+    expr.symbol_list = (char**)malloc(EXPR_LIST_START_SIZE * sizeof(char*));
+    expr.symbol_coeff = (int*)malloc(EXPR_LIST_START_SIZE * sizeof(int));
+    expr.symbol_num = 0;
+    expr.lists_size = EXPR_LIST_START_SIZE;
+    expr.value = 0;
+    return expr;
+}
+void add_to_expr_literal(s_expr* expr, long literal)
+{
+    expr->value += literal;
+}
+
+void add_to_expr_symbol(s_expr* expr, char* symbol, int sign)
+{
+    for (int i = 0; i < expr->symbol_num; i++)
+    {
+        if (strcmp(expr->symbol_list[i], symbol) == 0)
+        {
+            // sign is 1 or -1
+            expr->symbol_coeff[i] += sign;
+            return;
+        }
+    }
+    
+    if (expr->lists_size == expr->symbol_num)
+    {
+        expr->lists_size += EXPR_LIST_INCREMENT;
+        expr->symbol_list = realloc(expr->symbol_list, expr->lists_size * sizeof(char*));
+        expr->symbol_coeff = realloc(expr->symbol_coeff, expr->lists_size * sizeof(int));
+    }
+
+    expr->symbol_coeff[expr->symbol_num] = sign;
+    expr->symbol_list[expr->symbol_num++] = strdup(symbol);
 }

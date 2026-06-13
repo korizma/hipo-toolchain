@@ -136,6 +136,33 @@ s_error* handle_ascii(s_asm_line* line, s_section* s)
 
 s_error* handle_equ(s_asm_line* line, s_section* s)
 {
+    bool invalid = expr_is_invalid(&line->expression);
+    if (invalid)
+    {
+        return new_error(line, ERR_EXPR_INVALID);
+    }
+
+    int indx = check_symbol_table(line->new_symbol);
+    if (indx == -1)
+    {
+        add_to_symbol_table(line->new_symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_EQU);
+    }
+    else
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+        if (sym->state == ST_ENTRY_STATE_COMPLETE)
+        {
+            return new_symbol_error(line, ERR_DUPLICATE_SYMBOL, line->symbol);
+        }
+
+        if (sym->binding != STB_GLOBAL)
+            sym->binding = STB_LOCAL;
+
+        sym->type = STT_NOTYPE;
+        sym->visibility = STV_DEFAULT;
+        sym->state = ST_ENTRY_STATE_EQU;
+    }
+
     return NULL;
 }
 

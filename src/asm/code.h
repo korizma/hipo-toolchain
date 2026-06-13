@@ -5,16 +5,6 @@
 #include "elf.h"
 
 typedef enum {
-    EXPR_LITERAL,
-    EXPR_SYMBOL,
-    EXPR_ADD,
-    EXPR_SUB,
-    EXPR_MUL,
-    EXPR_DIV,
-    EXPR_NEG
-} e_expr_kind;
-
-typedef enum {
     ASM_INSTR_NONE = 0,
     ASM_INSTR_HALT,
     ASM_INSTR_INT,
@@ -80,12 +70,25 @@ typedef enum {
     ASM_REG_CAUSE
 } e_asm_register;
 
-typedef struct s_expr {
-    e_expr_kind kind;
-    long literal;
-    char* symbol;
-    struct s_expr* left;
-    struct s_expr* right;
+typedef enum  
+{
+    EXPR_VALID_KNOWN,
+    EXPR_VALID_UNKNOWN,
+    EXPR_INVALID,
+    EXPR_UNKNOWN
+} e_expr_status;
+
+
+// expr handling
+typedef struct 
+{
+    char** symbol_list; // list of symbol names used in the expression
+    int* symbol_coeff;  // 1*x, -1*x, 2*x...
+    int symbol_num;     // number of symbols
+    int lists_size;
+    long value;         // value to be added to the symbols
+
+
 } s_expr;
 
 typedef struct 

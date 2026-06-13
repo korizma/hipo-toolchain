@@ -74,15 +74,23 @@ void yyerror(const char *message);
     /* Pravila gramatike */
 
 input:
-    | line input
+    | line_with_comment input
     ;
 
+line_with_comment:
+    COMMENT line NEWLINE | line NEWLINE;
+
 line:
-        NEWLINE
-    |   COMMENT
-    |   DOT asm_directives NEWLINE
-    |   asm_instructions NEWLINE
-    |   symbol_name COLON NEWLINE {
+        
+    |   DOT asm_directives 
+    |   asm_instructions 
+    |   label 
+    |   label DOT asm_directives 
+    |   label asm_instructions 
+    ;
+
+label:
+    symbol_name COLON {
                 s_asm_line* line = new_empty_line(); 
                 line->is_label = true; 
                 line->symbol = $1;
@@ -195,46 +203,38 @@ sym_lit_list:
 
 expr:
         LITERAL {
-            $$.kind = EXPR_LITERAL;
-            $$.literal = $1;
-            $$.symbol = 0;
-            $$.left = 0;
-            $$.right = 0;
+            $$ = new_expr();
+            add_to_expr_literal(&$$, $1);
         }
     |   symbol_name {
-            s_expr* e = expr_symbol($1);
-            $$ = *e;
+            $$ = new_expr();
+            add_to_expr_symbol(&$$, $1, 1);
         }
-    |   expr PLUS expr {
-            s_expr* e = expr_binary(EXPR_ADD, expr_literal($1.literal), expr_literal($3.literal));
-            *e->left = $1;
-            *e->right = $3;
-            $$ = *e;
+    |   expr PLUS LITERAL {
+            $$ = $1;
+            add_to_expr_literal(&$$, $3);
         }
-    |   expr MINUS expr {
-            s_expr* e = expr_binary(EXPR_SUB, expr_literal($1.literal), expr_literal($3.literal));
-            *e->left = $1;
-            *e->right = $3;
-            $$ = *e;
+    |   expr PLUS symbol_name {
+            $$ = $1;
+            add_to_expr_symbol(&$$, $3, 1);
         }
-    |   expr MULT expr {
-            s_expr* e = expr_binary(EXPR_MUL, expr_literal($1.literal), expr_literal($3.literal));
-            *e->left = $1;
-            *e->right = $3;
-            $$ = *e;
+    |   expr MINUS LITERAL {
+            $$ = $1;
+            add_to_expr_literal(&$$, -$3);
         }
-    |   expr DIVISION expr {
-            s_expr* e = expr_binary(EXPR_DIV, expr_literal($1.literal), expr_literal($3.literal));
-            *e->left = $1;
-            *e->right = $3;
-            $$ = *e;
+    |   expr MINUS symbol_name {  
+            $$ = $1;
+            add_to_expr_symbol(&$$, $3, -1);
         }
-    |   MINUS expr %prec UMINUS {
-            s_expr* e = expr_binary(EXPR_NEG, expr_literal(0), 0);
-            *e->left = $2;
-            $$ = *e;
+    |   MINUS LITERAL %prec UMINUS {
+            $$ = new_expr();
+            add_to_expr_literal(&$$, -$2);
         }
-        ;
+    |   MINUS symbol_name %prec UMINUS {
+            $$ = new_expr();
+            add_to_expr_symbol(&$$, $2, -1);
+        }
+    ;
 
 symbol_name:
         SYMBOL { $$ = $1; }

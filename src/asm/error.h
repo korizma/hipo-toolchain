@@ -18,7 +18,8 @@ typedef enum
     ERR_INVALID_JUMP_OPERAND,
     ERR_UNRESOLVED_SYMBOL,
     ERR_TRAMPOLINE_DISPLACEMENT_TOO_LARGE,
-    ERR_SKIP_BYTE_LIMIT
+    ERR_SKIP_BYTE_LIMIT,
+    ERR_EXPR_INVALID
 } e_error_type;
 
 typedef struct s_error

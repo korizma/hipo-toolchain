@@ -5,6 +5,9 @@
 #include "stdlib.h"
 #include "string.h"
 
+#define EXPR_LIST_START_SIZE 5
+#define EXPR_LIST_INCREMENT 2
+
 typedef struct {
     e_asm_register reg1;
     e_asm_register reg2;
@@ -19,10 +22,6 @@ typedef struct {
     char** arr;
     int n, curr_size;
 } s_list_n_s;
-
-s_expr* expr_literal(long value);
-s_expr* expr_symbol(char* symbol);
-s_expr* expr_binary(e_expr_kind kind, s_expr* left, s_expr* right);
 
 s_asm_line* new_empty_line(void);
 void add_line(s_asm_line* line);
@@ -44,5 +43,9 @@ void reverse_arr_sym(s_list_n_s* list);
 long parse_literal_lex(char* lit);
 
 void yyerror(const char *message);
+
+s_expr new_expr();
+void add_to_expr_literal(s_expr* expr, long literal);
+void add_to_expr_symbol(s_expr* expr, char* symbol, int sign);
 
 #endif

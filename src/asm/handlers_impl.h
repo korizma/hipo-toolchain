@@ -58,13 +58,11 @@ s_error* handle_label(s_asm_line* line, s_section* s);
 
 char* translate_to_binary(char oc, char mod, char reg_a, char reg_b, char reg_c, long disp);
 
-bool expr_is_valid(s_expr* expression, s_section* curr_section);
-long calculate_expression(s_expr* expression);
-
-
 char find_operation_code(e_asm_instruction instr);
 char find_operation_mod(s_asm_line* line);
 
 bool long_fit_in_12b(long a);
+
+bool expr_is_invalid(s_expr* expr);
 
 #endif
