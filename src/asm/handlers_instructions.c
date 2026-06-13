@@ -423,7 +423,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: IMM LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
+            printf("ERROR: ld operand: IMM LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
         }
 
@@ -440,21 +440,8 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        if (sym->binding == STB_GLOBAL)
-        {
-            create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
-        }
-        else
-        {
-            // symbol is not global, so we need to use section as base
-            // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = -1;
-            if (sym->section != 0)
-            {
-                section_indx_in_sym_table = check_symbol_table(sym->section->name);
-            }
-            create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
-        }
+        // suppose the symbol is global
+        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_LITERAL)
     {
@@ -465,7 +452,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: MEM LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
+            printf("ERROR: ld operand: MEM LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
         }
 
@@ -482,21 +469,8 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        if (sym->binding == STB_GLOBAL)
-        {
-            create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
-        }
-        else
-        {
-            // symbol is not global, so we need to use section as base
-            // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = -1;
-            if (sym->section != 0)
-            {
-                section_indx_in_sym_table = check_symbol_table(sym->section->name);
-            }
-            create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
-        }
+        // suppose the symbol is global
+        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -525,7 +499,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: REG INDIRECT LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
+            printf("ERROR: ld operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
         }
 
@@ -543,21 +517,8 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        if (sym->binding == STB_GLOBAL)
-        {
-            create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
-        }
-        else
-        {
-            // symbol is not global, so we need to use section as base
-            // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = -1;
-            if (sym->section != 0)
-            {
-                section_indx_in_sym_table = check_symbol_table(sym->section->name);
-            }
-            create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
-        }
+        // suppose the symbol is global
+        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
@@ -599,7 +560,7 @@ int handle_st(s_asm_line* line, s_section* s)
         
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: st operand: REG INDIRECT LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
+            printf("ERROR: st operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
         }
 
@@ -617,21 +578,8 @@ int handle_st(s_asm_line* line, s_section* s)
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        if (sym->binding == STB_GLOBAL)
-        {
-            create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
-        }
-        else
-        {
-            // symbol is not global, so we need to use section as base
-            // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = -1;
-            if (sym->section != 0)
-            {
-                section_indx_in_sym_table = check_symbol_table(sym->section->name);
-            }
-            create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
-        }
+        // suppose the symbol is global
+        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -661,7 +609,7 @@ int handle_st(s_asm_line* line, s_section* s)
         
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: st operand: REG INDIRECT LITERAL %l is bigger than 12 bits!\n", line->o_ls.literal);
+            printf("ERROR: st operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
             return -1;
         }
 
@@ -680,21 +628,8 @@ int handle_st(s_asm_line* line, s_section* s)
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        if (sym->binding == STB_GLOBAL)
-        {
-            create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
-        }
-        else
-        {
-            // symbol is not global, so we need to use section as base
-            // symbol maybe declared as global later, so this will could be changed when creating the rela table
-            int section_indx_in_sym_table = -1;
-            if (sym->section != 0)
-            {
-                section_indx_in_sym_table = check_symbol_table(sym->section->name);
-            }
-            create_rela_entry(s, s->next_free + 2, section_indx_in_sym_table, R_HIPO_12, sym->st_value);
-        }
+        // suppose the symbol is global
+        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);

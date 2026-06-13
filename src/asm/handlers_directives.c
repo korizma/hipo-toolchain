@@ -98,18 +98,8 @@ int handle_word(s_asm_line* line, s_section* s)
             if (sym->type != STT_SECTION)
                 sym->st_size = WORD_SIZE;
             
-            if (sym->binding == STB_GLOBAL)
-            {
-                // symbol is global, so we can relocate on it
-                create_rela_entry(s, s->next_free, indx, R_HIPO_32, 0);
-            }
-            else
-            {
-                // symbol is not global, so we need to use section as base
-                // symbol maybe declared as global later, so this will could be changed when creating the rela table
-                int section_indx_in_sym_table = check_symbol_table(sym->section->name);
-                create_rela_entry(s, s->next_free, section_indx_in_sym_table, R_HIPO_32, sym->st_value);
-            }
+            // suppose the symbol is global, if not change in cleanup
+            create_rela_entry(s, s->next_free, indx, R_HIPO_32, 0);
 
             char bin[WORD_SIZE];
             write_bytes_to_section(s, bin, WORD_SIZE);
@@ -186,7 +176,7 @@ int handle_label(s_asm_line* line, s_section* s)
             return -1;
         }
 
-        if (sym->state != ST_ENTRY_STATE_PARTIAL_GLOBAL)
+        if (sym->binding != STB_GLOBAL)
             sym->binding = STB_LOCAL;
 
         sym->type = STT_NOTYPE;

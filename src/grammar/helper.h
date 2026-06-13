@@ -20,7 +20,7 @@ typedef struct {
     int n, curr_size;
 } s_list_n_s;
 
-s_expr* expr_literal(int value);
+s_expr* expr_literal(long value);
 s_expr* expr_symbol(char* symbol);
 s_expr* expr_binary(e_expr_kind kind, s_expr* left, s_expr* right);
 
@@ -35,13 +35,13 @@ void allocate_n_more_sl_list(s_list_n_sl* list, int n_more);
 void add_to_list_sym_list(s_list_n_s* list, char* sym);
 void add_to_list_sl_list(s_list_n_sl* list, s_sym_or_lit* a);
 
-s_sym_or_lit* new_lit_sl(int lit);
+s_sym_or_lit* new_lit_sl(long lit);
 s_sym_or_lit* new_sym_sl(char* sym);
 
 void reverse_arr_sl(s_list_n_sl* list);
 void reverse_arr_sym(s_list_n_s* list);
 
-int parse_literal_lex(char* lit);
+long parse_literal_lex(char* lit);
 
 void yyerror(const char *message);
 

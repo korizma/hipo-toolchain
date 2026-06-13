@@ -79,3 +79,18 @@ int get_and_set_reference(char* symbol)
     
     return indx;
 }
+
+int finalize_symbol_table()
+{
+    for (int i = 0; i < p.sym_table->symbol_num; i++)
+    {
+        s_Elf64_Sym* sym = p.sym_table->symbols[i];
+
+        if (sym->state != ST_ENTRY_STATE_COMPLETE)
+        {
+            printf("Error: symbol '%s' is referenced but not defined\n", sym->st_name);
+            return -1;
+        }
+    }
+    return 0;
+}

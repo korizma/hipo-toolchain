@@ -79,4 +79,7 @@ void update_label_size_if_last(s_section* s, int size);
 
 void update_section_size_in_sym_table(s_section* s);
 
+// returns -1 if there are symbols that are referenced but not inited
+int finalize_symbol_table();
+
 #endif

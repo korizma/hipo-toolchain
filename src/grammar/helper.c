@@ -8,7 +8,7 @@
 extern s_asm_file asm_file;
 
 
-s_expr* expr_literal(int value) {
+s_expr* expr_literal(long value) {
     s_expr* e = malloc(sizeof(s_expr));
     e->kind = EXPR_LITERAL;
     e->literal = value;
@@ -108,7 +108,7 @@ void add_to_list_sl_list(s_list_n_sl* list, s_sym_or_lit* a)
     list->arr[list->n++] = a;
 }
 
-s_sym_or_lit* new_lit_sl(int lit)
+s_sym_or_lit* new_lit_sl(long lit)
 {
     s_sym_or_lit* ret_val = (s_sym_or_lit*)malloc(sizeof(s_sym_or_lit));
     ret_val->is_literal = true;
@@ -147,10 +147,10 @@ void reverse_arr_sym(s_list_n_s* list)
 }
 
 
-int parse_literal_lex(char* lit) {
+long parse_literal_lex(char* lit) {
     if ((strlen(lit) > 2 && lit[1] != 'x') || strlen(lit) <= 2)
         return atoi(lit);
-    return (int)strtol(lit+2, NULL, 16);
+    return (long)strtol(lit+2, NULL, 16);
 }
 
 void yyerror(const char *message)

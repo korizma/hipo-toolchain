@@ -20,9 +20,9 @@ s_section* new_section(char* name)
 
 void write_bytes_to_section(s_section* s, char* bytes, int num)
 {
-    if (s->next_free + num > s->size)
+    if (s->next_free + num >= s->size)
     {
-        s->size += SECTION_INCREMENT_SIZE;
+        s->size += num + SECTION_INCREMENT_SIZE;
         s->bytes = realloc(s->bytes, s->size * sizeof(char));
     }
     memcpy(s->bytes + sizeof(char)*s->next_free, bytes, num);
@@ -31,9 +31,9 @@ void write_bytes_to_section(s_section* s, char* bytes, int num)
 
 void skip_bytes_in_section(s_section* s, int num)
 {
-    if (s->next_free + num > s->size)
+    if (s->next_free + num >= s->size)
     {
-        s->size += SECTION_INCREMENT_SIZE;
+        s->size += num + SECTION_INCREMENT_SIZE;
         s->bytes = realloc(s->bytes, s->size * sizeof(char));
     }
     for (int i = 0; i < num; i++)

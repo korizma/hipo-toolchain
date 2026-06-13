@@ -20,10 +20,18 @@ void init_asm_file()
 
 void assemble_file(const char* filename)
 {
+    bool has_error = false;
     for (int i = 0; i < asm_file.curr_line; i++)
     {
-        handle_line(asm_file.lines[i]);
+        int err = handle_line(asm_file.lines[i]);
+        if (err != 0)
+            has_error = true;
     }
+
+    if (has_error)
+        printf("Assembly failed due to errors!\n");
+    else
+        printf("Assembly successful!\n");
 
     print_program();
     print_trampoline();

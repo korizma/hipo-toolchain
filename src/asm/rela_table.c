@@ -1,7 +1,11 @@
 #include "rela_table.h"
 #include "section.h"
+#include "sym_table.h"
+#include "elf.h"
 #include <stdio.h>
 #include <stdlib.h>
+
+extern s_program p;
 
 void create_rela_table(s_section* s)
 {
@@ -76,5 +80,22 @@ void print_rela_table(s_rela_table* rela_table)
                entry->sym_index,
                rela_type_name(entry->reloc_type),
                entry->r_addend);
+    }
+}
+
+void check_rela_table(s_rela_table* rela_table)
+{
+    for (int i = 0; i < rela_table->entry_num; i++)
+    {
+        s_Elf64_Rela_entry* entry = rela_table->entries[i];
+        s_Elf64_Sym* sym = p.sym_table->symbols[i];
+
+        if (sym->binding = STB_GLOBAL)
+            continue;
+
+        s_section* sym_section = sym->section;
+        int section_indx = check_symbol_table(sym_section->name);
+        entry->sym_index = section_indx;
+        entry->r_addend = sym->st_value;
     }
 }
