@@ -33,6 +33,12 @@ void assemble_file(const char* filename)
         }
     }
 
+    if (p.curr_section != 0)
+    {
+        update_section_size_in_sym_table(p.curr_section);
+        p.curr_section = 0;
+    }
+
     s_error* err = finalize_symbol_table();
     if (err != 0)
     {
@@ -46,6 +52,16 @@ void assemble_file(const char* filename)
     else
         printf("Assembly successful!\n");
 
+    write_trampolines();
+
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        check_rela_table(p.sections[i]->rela_table);
+    }
+
     print_program();
     print_trampoline();
+
+
+    free_trampoline();
 }

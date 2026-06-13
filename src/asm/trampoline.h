@@ -7,6 +7,8 @@
 #define TRAMPOLINE_START_SIZE 10
 #define TRAMPOLINE_INCREMENT 10
 
+#define TRAMPOLINE_ONE_ENTRY_MEM_SIZE 4
+
 typedef enum
 {
     TE_JUMP_LITERAL,
@@ -25,6 +27,10 @@ typedef struct
     s_asm_line* line;
 
     e_trampoline_entry_type type;
+
+    // after its done
+    bool is_done;
+    long trampoline_location;
 } s_trampoline_entry;
 
 typedef struct 
@@ -35,10 +41,21 @@ typedef struct
 
 void init_trampoline();
 
+void free_trampoline();
+
 void add_trampoline_entry(s_section* s, s_asm_line* line, long literal, char* symbol, e_trampoline_entry_type type);
 
 void write_trampolines();
 
 void print_trampoline();
+
+void write_trampoline_literal(s_trampoline_entry* entry);
+
+void write_trampoline_symbol(s_trampoline_entry* entry);
+
+// if they use the same symbol or literal and are in the same
+s_trampoline_entry* find_matching_trampoline_entry(s_trampoline_entry* entry);
+
+void write_displacement_to_line(s_asm_line* line, long trampoline_location);
 
 #endif 

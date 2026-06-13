@@ -85,6 +85,9 @@ void print_rela_table(s_rela_table* rela_table)
 
 void check_rela_table(s_rela_table* rela_table)
 {
+    if (rela_table == NULL)
+        return;
+        
     for (int i = 0; i < rela_table->entry_num; i++)
     {
         s_Elf64_Rela_entry* entry = rela_table->entries[i];
