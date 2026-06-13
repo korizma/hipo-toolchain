@@ -49,12 +49,13 @@ void assemble_file(const char* filename)
         has_error = true;
     }
 
-    if (has_error)
+    int trampoline_status = write_trampolines();
+
+    if (has_error || trampoline_status != 0)
         printf("Assembly failed due to errors!\n");
     else
         printf("Assembly successful!\n");
 
-    write_trampolines();
 
     for (int i = 0; i < p.number_of_sections; i++)
     {
