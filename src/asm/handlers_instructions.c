@@ -96,7 +96,7 @@ int handle_call(s_asm_line* line, s_section* s)
         }
 
         // trampoline pool
-        add_trampoline_entry(s, line, 0, sym->st_name, TRAMPOLINE_ENTRY_SYMBOL);
+        add_trampoline_entry(s, line, 0, sym->st_name, TE_JUMP_SYMBOL);
         
         mod = 0b0001;
         regA = ASM_REG_PC;
@@ -126,7 +126,7 @@ int handle_call(s_asm_line* line, s_section* s)
             return 0;
         }
 
-        add_trampoline_entry(s, line, line->o_jmp.literal, 0, TRAMPOLINE_ENTRY_LITERAL);
+        add_trampoline_entry(s, line, line->o_jmp.literal, 0, TE_JUMP_LITERAL);
         
         mod = 0b0001;
         regA = ASM_REG_PC;
@@ -196,7 +196,7 @@ int handle_branch(s_asm_line* line, s_section* s)
         }
         
         // trampoline pool
-        add_trampoline_entry(s, line, 0, sym->st_name, TRAMPOLINE_ENTRY_SYMBOL);
+        add_trampoline_entry(s, line, 0, sym->st_name, TE_JUMP_SYMBOL);
         
         switch(line->instruction)
         {
@@ -239,7 +239,7 @@ int handle_branch(s_asm_line* line, s_section* s)
             return 0;
         }
 
-        add_trampoline_entry(s, line, line->o_jmp.literal, 0, TRAMPOLINE_ENTRY_LITERAL);
+        add_trampoline_entry(s, line, line->o_jmp.literal, 0, TE_JUMP_LITERAL);
         
         switch(line->instruction)
         {
@@ -423,25 +423,57 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: IMM LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
-            return -1;
+            // the literal does not fit in 12bits so we need to use it from the pool
+            // using OC=1001, MOD = 0010
+            // A <= mem[B + C + D]
+            add_trampoline_entry(s, line, line->o_ls.literal, 0, TE_LD_IMM_LITERAL);
+
+            oc = 0b1001;
+            mod = 0b0010;
+            regA = line->reg1;
+            regB = ASM_REG_PC;
+            regC = ASM_REG_R0;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            // disp will be edited in trampoline
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
+            return 0;
         }
 
         disp = line->o_ls.literal & 0xFFF;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_IMM_SYMBOL)
     {
-        // A <= B + D
-        mod = 0b0001;
-        regA = line->reg1;
-        regB = ASM_REG_R0;
-
         int indx = get_and_set_reference(line->o_ls.symbol);
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        // suppose the symbol is global
-        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
+        // the symbol does not fit in 12bits so we need to use it from the pool
+        // using OC=1001, MOD = 0010
+        // A <= mem[B + C + D]
+        add_trampoline_entry(s, line, 0, sym->st_name, TE_LD_IMM_SYMBOL);
+
+        oc = 0b1001;
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = ASM_REG_PC;
+        regC = ASM_REG_R0;
+
+        line->section_location = s;
+        line->bytes_location = s->next_free;
+
+        // disp will be edited in trampoline
+        // and trampoline code will emit the rela
+        char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+        write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+        free(bin);
+        return 0;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_LITERAL)
     {
@@ -460,17 +492,11 @@ int handle_ld(s_asm_line* line, s_section* s)
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_SYMBOL)
     {
-        // A <= mem32[B + C + D]
-        mod = 0b0010;
-        regA = line->reg1;
-        regB = regC = ASM_REG_R0;
-
-        int indx = get_and_set_reference(line->o_ls.symbol);
-
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-
-        // suppose the symbol is global
-        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
+        // this asm instruction cant be mapped to one machine instruciton
+        // it can however be mapped to two instructions, but im not sure if thats correct
+        // throwing error for now
+        printf("ERROR: ld operand: MEM SYMBOL is not supported!\n");
+        return -1;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -507,18 +533,11 @@ int handle_ld(s_asm_line* line, s_section* s)
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_SYMBOL)
     {
-        // A <= mem32[B + C + D]
-        mod = 0b0010;
-        regA = line->reg1;
-        regB = line->o_ls.reg;
-        regC = 0;
-        // create relocation for disp
-        int indx = get_and_set_reference(line->o_ls.symbol);
-
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-
-        // suppose the symbol is global
-        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
+        // symbol is always > 12bits, unless its equ and has deterministic value
+        // equ not implemented
+        // throwing error for now
+        printf("ERROR: ld operand: REG_INDIRECT_SYMBOL is not supported!\n");
+        return -1;
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
@@ -560,26 +579,55 @@ int handle_st(s_asm_line* line, s_section* s)
         
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: st operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
-            return -1;
+            // oc = 0b1000, mod=0b0010
+            // mem[mem[A + B + D]] <= C
+            add_trampoline_entry(s, line, line->o_ls.literal, 0, TE_ST_MEM_LITERAL);
+
+            oc = 0b1000;
+            mod = 0b0010;
+            regA = ASM_REG_PC;
+            regB = ASM_REG_R0;
+            regC = line->reg1;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            // disp will be edited in trampoline
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
+            return 0;
         }
 
         disp = line->o_ls.literal & 0xFFF; 
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_SYMBOL)
     {
-        // mem[A + B + D] <= C
-        mod = 0b0000;
-        regA = regB = 0;
-        regC = line->reg1;
-
         // create relocation for disp
         int indx = get_and_set_reference(line->o_ls.symbol);
 
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
 
-        // suppose the symbol is global
-        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
+        // oc = 0b1000, mod=0b0010
+        // mem[mem[A + B + D]] <= C
+        add_trampoline_entry(s, line, 0, sym->st_name, TE_ST_MEM_SYMBOL);
+
+        oc = 0b1000;
+        mod = 0b0010;
+        regA = ASM_REG_PC;
+        regB = ASM_REG_R0;
+        regC = line->reg1;
+
+        line->section_location = s;
+        line->bytes_location = s->next_free;
+
+        // disp will be edited in trampoline
+        char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+        write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+        free(bin);
+        return 0;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -617,19 +665,11 @@ int handle_st(s_asm_line* line, s_section* s)
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_SYMBOL)
     {
-        // mem[A + B + D] <= C
-        mod = 0b0000;
-        regA = line->o_ls.reg; 
-        regB = 0;
-        regC = line->reg1;
-
-        // create relocation for disp
-        int indx = get_and_set_reference(line->o_ls.symbol);
-
-        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-
-        // suppose the symbol is global
-        create_rela_entry(s, s->next_free + 2, indx, R_HIPO_12, 0);
+        // symbol is always > 12bits, unless its equ and has deterministic value
+        // equ not implemented
+        // throwing error for now
+        printf("ERROR: st operand: Invalid operand: REG INDIRECT SYMBOL!");
+        return -1;
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);

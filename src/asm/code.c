@@ -1,6 +1,9 @@
 #include "code.h"
 
+#include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 const char* asm_instruction_name(e_asm_instruction instruction)
 {
@@ -54,206 +57,377 @@ const char* asm_directive_name(e_asm_directive directive)
     return NULL;
 }
 
-static void print_reg(e_asm_register reg)
+typedef struct
+{
+    char* data;
+    size_t length;
+    size_t capacity;
+    bool failed;
+} s_string_builder;
+
+static char* duplicate_string(const char* string)
+{
+    if (string == NULL)
+        string = "";
+
+    size_t length = strlen(string) + 1;
+    char* copy = (char*)malloc(length);
+    if (copy == NULL)
+        return NULL;
+
+    memcpy(copy, string, length);
+    return copy;
+}
+
+static char* format_to_string(const char* format, ...)
+{
+    va_list args;
+    va_list args_copy;
+
+    va_start(args, format);
+    va_copy(args_copy, args);
+    int required = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    if (required < 0) {
+        va_end(args);
+        return NULL;
+    }
+
+    char* result = (char*)malloc((size_t)required + 1);
+    if (result == NULL) {
+        va_end(args);
+        return NULL;
+    }
+
+    vsnprintf(result, (size_t)required + 1, format, args);
+    va_end(args);
+    return result;
+}
+
+static void string_builder_init(s_string_builder* builder)
+{
+    builder->length = 0;
+    builder->capacity = 64;
+    builder->data = (char*)malloc(builder->capacity);
+    builder->failed = builder->data == NULL;
+
+    if (!builder->failed)
+        builder->data[0] = '\0';
+}
+
+static void string_builder_reserve(s_string_builder* builder, size_t additional)
+{
+    if (builder->failed)
+        return;
+
+    size_t required = builder->length + additional + 1;
+    if (required <= builder->capacity)
+        return;
+
+    size_t new_capacity = builder->capacity;
+    while (new_capacity < required)
+        new_capacity *= 2;
+
+    char* data = (char*)realloc(builder->data, new_capacity);
+    if (data == NULL) {
+        builder->failed = true;
+        return;
+    }
+
+    builder->data = data;
+    builder->capacity = new_capacity;
+}
+
+static void string_builder_append(s_string_builder* builder, const char* string)
+{
+    if (string == NULL)
+        string = "";
+
+    size_t length = strlen(string);
+    string_builder_reserve(builder, length);
+    if (builder->failed)
+        return;
+
+    memcpy(builder->data + builder->length, string, length + 1);
+    builder->length += length;
+}
+
+static void string_builder_appendf(s_string_builder* builder, const char* format, ...)
+{
+    if (builder->failed)
+        return;
+
+    va_list args;
+    va_list args_copy;
+
+    va_start(args, format);
+    va_copy(args_copy, args);
+    int required = vsnprintf(NULL, 0, format, args_copy);
+    va_end(args_copy);
+
+    if (required < 0) {
+        builder->failed = true;
+        va_end(args);
+        return;
+    }
+
+    string_builder_reserve(builder, (size_t)required);
+    if (builder->failed) {
+        va_end(args);
+        return;
+    }
+
+    vsnprintf(builder->data + builder->length,
+              builder->capacity - builder->length,
+              format,
+              args);
+    builder->length += (size_t)required;
+    va_end(args);
+}
+
+static void string_builder_append_string(s_string_builder* builder, char* string)
+{
+    if (string == NULL) {
+        builder->failed = true;
+        return;
+    }
+
+    string_builder_append(builder, string);
+    free(string);
+}
+
+static char* string_builder_take(s_string_builder* builder)
+{
+    if (builder->failed) {
+        free(builder->data);
+        return NULL;
+    }
+
+    return builder->data;
+}
+
+static char* reg_to_string(e_asm_register reg)
 {
     if (reg == ASM_REG_HANDLER) {
-        printf("%%handler");
+        return duplicate_string("%handler");
     } else if (reg == ASM_REG_STATUS) {
-        printf("%%status");
+        return duplicate_string("%status");
     } else if (reg == ASM_REG_CAUSE) {
-        printf("%%cause");
+        return duplicate_string("%cause");
     } else if (reg == ASM_REG_SP) {
-        printf("%%sp");
+        return duplicate_string("%sp");
     } else if (reg == ASM_REG_PC) {
-        printf("%%pc");
+        return duplicate_string("%pc");
     } else if (reg >= ASM_REG_R0 && reg <= ASM_REG_R15) {
-        printf("%%r%d", reg);
+        return format_to_string("%%r%d", reg);
     } else {
-        printf("%%?<%d>", reg);
+        return format_to_string("%%?<%d>", reg);
     }
 }
 
-static void print_jmp_operand(const s_operand_jmp* operand)
+static char* jmp_operand_to_string(const s_operand_jmp* operand)
 {
     if (operand->is_literal) {
-        printf("%ld", operand->literal);
+        return format_to_string("%ld", operand->literal);
     } else if (operand->is_symbol && operand->symbol) {
-        printf("%s", operand->symbol);
+        return duplicate_string(operand->symbol);
     } else {
-        printf("<missing operand>");
+        return duplicate_string("<missing operand>");
     }
 }
 
-static void print_ls_operand(const s_operand_ls* operand)
+static char* ls_operand_to_string(const s_operand_ls* operand)
 {
     switch (operand->kind) {
     case ASM_OPERAND_LS_IMM_LITERAL:
-        printf("$%ld", operand->literal);
-        break;
+        return format_to_string("$%ld", operand->literal);
     case ASM_OPERAND_LS_IMM_SYMBOL:
-        printf("$%s", operand->symbol ? operand->symbol : "<missing symbol>");
-        break;
+        return format_to_string("$%s", operand->symbol ? operand->symbol : "<missing symbol>");
     case ASM_OPERAND_LS_MEM_LITERAL:
-        printf("%ld", operand->literal);
-        break;
+        return format_to_string("%ld", operand->literal);
     case ASM_OPERAND_LS_MEM_SYMBOL:
-        printf("%s", operand->symbol ? operand->symbol : "<missing symbol>");
-        break;
+        return duplicate_string(operand->symbol ? operand->symbol : "<missing symbol>");
     case ASM_OPERAND_LS_REG:
-        print_reg(operand->reg);
-        break;
-    case ASM_OPERAND_LS_REG_INDIRECT:
-        printf("[");
-        print_reg(operand->reg);
-        printf("]");
-        break;
-    case ASM_OPERAND_LS_REG_INDIRECT_LITERAL:
-        printf("[");
-        print_reg(operand->reg);
-        printf(" + %ld]", operand->literal);
-        break;
-    case ASM_OPERAND_LS_REG_INDIRECT_SYMBOL:
-        printf("[");
-        print_reg(operand->reg);
-        printf(" + %s]", operand->symbol ? operand->symbol : "<missing symbol>");
-        break;
-    case ASM_OPERAND_LS_NONE:
-        printf("<missing operand>");
-        break;
+        return reg_to_string(operand->reg);
+    case ASM_OPERAND_LS_REG_INDIRECT: {
+        char* reg = reg_to_string(operand->reg);
+        char* result = format_to_string("[%s]", reg ? reg : "<missing register>");
+        free(reg);
+        return result;
     }
+    case ASM_OPERAND_LS_REG_INDIRECT_LITERAL: {
+        char* reg = reg_to_string(operand->reg);
+        char* result = format_to_string("[%s + %ld]", reg ? reg : "<missing register>", operand->literal);
+        free(reg);
+        return result;
+    }
+    case ASM_OPERAND_LS_REG_INDIRECT_SYMBOL: {
+        char* reg = reg_to_string(operand->reg);
+        char* result = format_to_string("[%s + %s]",
+                                        reg ? reg : "<missing register>",
+                                        operand->symbol ? operand->symbol : "<missing symbol>");
+        free(reg);
+        return result;
+    }
+    case ASM_OPERAND_LS_NONE:
+        return duplicate_string("<missing operand>");
+    }
+
+    return duplicate_string("<missing operand>");
 }
 
-static void print_expr(const s_expr* expression)
+static char* expr_to_string(const s_expr* expression)
 {
     if (!expression) {
-        printf("<missing expression>");
-        return;
+        return duplicate_string("<missing expression>");
     }
 
     switch (expression->kind) {
     case EXPR_LITERAL:
-        printf("%d", expression->literal);
-        break;
+        return format_to_string("%ld", expression->literal);
     case EXPR_SYMBOL:
-        printf("%s", expression->symbol ? expression->symbol : "<missing symbol>");
-        break;
-    case EXPR_NEG:
-        printf("-");
-        print_expr(expression->left);
-        break;
+        return duplicate_string(expression->symbol ? expression->symbol : "<missing symbol>");
+    case EXPR_NEG: {
+        char* left = expr_to_string(expression->left);
+        char* result = format_to_string("-%s", left ? left : "<missing expression>");
+        free(left);
+        return result;
+    }
     case EXPR_ADD:
     case EXPR_SUB:
     case EXPR_MUL:
-    case EXPR_DIV:
-        printf("(");
-        print_expr(expression->left);
-        printf(" %c ", expression->kind == EXPR_ADD ? '+'
-                       : expression->kind == EXPR_SUB ? '-'
-                       : expression->kind == EXPR_MUL ? '*'
-                                                       : '/');
-        print_expr(expression->right);
-        printf(")");
-        break;
+    case EXPR_DIV: {
+        char* left = expr_to_string(expression->left);
+        char* right = expr_to_string(expression->right);
+        char op = expression->kind == EXPR_ADD ? '+'
+                : expression->kind == EXPR_SUB ? '-'
+                : expression->kind == EXPR_MUL ? '*'
+                                               : '/';
+        char* result = format_to_string("(%s %c %s)",
+                                        left ? left : "<missing expression>",
+                                        op,
+                                        right ? right : "<missing expression>");
+        free(left);
+        free(right);
+        return result;
     }
+    }
+
+    return duplicate_string("<missing expression>");
 }
 
-static void print_symbol_list(char** symbols, int symbol_count)
+static char* symbol_list_to_string(char** symbols, int symbol_count)
 {
+    s_string_builder builder;
+    string_builder_init(&builder);
+
     for (int i = 0; i < symbol_count; i++) {
         if (i > 0) {
-            printf(", ");
+            string_builder_append(&builder, ", ");
         }
-        printf("%s", symbols[i] ? symbols[i] : "<missing symbol>");
+        string_builder_append(&builder, symbols[i] ? symbols[i] : "<missing symbol>");
     }
+
+    return string_builder_take(&builder);
 }
 
-static void print_sym_or_lit_list(s_sym_or_lit** items, int item_count)
+static char* sym_or_lit_list_to_string(s_sym_or_lit** items, int item_count)
 {
+    s_string_builder builder;
+    string_builder_init(&builder);
+
     for (int i = 0; i < item_count; i++) {
         s_sym_or_lit* item = items[i];
 
         if (i > 0) {
-            printf(", ");
+            string_builder_append(&builder, ", ");
         }
 
         if (!item) {
-            printf("<missing item>");
+            string_builder_append(&builder, "<missing item>");
         } else if (item->is_literal) {
-            printf("%d", item->literal);
+            string_builder_appendf(&builder, "%ld", item->literal);
         } else if (item->is_symbol && item->symbol) {
-            printf("%s", item->symbol);
+            string_builder_append(&builder, item->symbol);
         } else {
-            printf("<missing item>");
+            string_builder_append(&builder, "<missing item>");
         }
     }
+
+    return string_builder_take(&builder);
 }
 
-void print_asm_line(s_asm_line* line)
+char* asm_line_to_string(s_asm_line* line)
 {
     if (!line) {
-        printf("<null line>\n");
-        return;
+        return duplicate_string("<null line>\n");
     }
 
     if (line->is_label) {
-        printf("%s:\n", line->symbol ? line->symbol : "<missing label>");
-        return;
+        return format_to_string("%s:\n", line->symbol ? line->symbol : "<missing label>");
     }
 
     if (line->is_directive) {
+        s_string_builder builder;
+        string_builder_init(&builder);
+
         const char* op = asm_directive_name(line->directive);
         if (op == NULL) {
             op = "<missing directive>";
         }
 
-        printf(".%s", op);
+        string_builder_appendf(&builder, ".%s", op);
 
         if (line->directive == ASM_DIR_GLOBAL || line->directive == ASM_DIR_EXTERN) {
-            printf(" ");
-            print_symbol_list(line->symbol_list, line->symbol_list_n);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, symbol_list_to_string(line->symbol_list, line->symbol_list_n));
         } else if (line->directive == ASM_DIR_SECTION) {
-            printf(" %s", line->section_name ? line->section_name : "<missing section>");
+            string_builder_appendf(&builder, " %s", line->section_name ? line->section_name : "<missing section>");
         } else if (line->directive == ASM_DIR_WORD) {
-            printf(" ");
-            print_sym_or_lit_list(line->sym_or_lit_list, line->sym_or_lit_list_n);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, sym_or_lit_list_to_string(line->sym_or_lit_list, line->sym_or_lit_list_n));
         } else if (line->directive == ASM_DIR_SKIP) {
-            printf(" %d", line->byte_num);
+            string_builder_appendf(&builder, " %d", line->byte_num);
         } else if (line->directive == ASM_DIR_ASCII) {
-            printf(" %s", line->ascii_string ? line->ascii_string : "<missing string>");
+            string_builder_appendf(&builder, " %s", line->ascii_string ? line->ascii_string : "<missing string>");
         } else if (line->directive == ASM_DIR_EQU) {
-            printf(" %s, ", line->new_symbol ? line->new_symbol : "<missing symbol>");
-            print_expr(&line->expression);
+            string_builder_appendf(&builder, " %s, ", line->new_symbol ? line->new_symbol : "<missing symbol>");
+            string_builder_append_string(&builder, expr_to_string(&line->expression));
         }
 
-        printf("\n");
-        return;
+        string_builder_append(&builder, "\n");
+        return string_builder_take(&builder);
     }
 
     if (line->is_instruction) {
+        s_string_builder builder;
+        string_builder_init(&builder);
+
         const char* op = asm_instruction_name(line->instruction);
         if (op == NULL) {
             op = "<missing instruction>";
         }
 
-        printf("%s", op);
+        string_builder_append(&builder, op);
 
         if (line->instruction == ASM_INSTR_CALL || line->instruction == ASM_INSTR_JMP) {
-            printf(" ");
-            print_jmp_operand(&line->o_jmp);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, jmp_operand_to_string(&line->o_jmp));
         } else if (line->instruction == ASM_INSTR_BEQ ||
                    line->instruction == ASM_INSTR_BNE ||
                    line->instruction == ASM_INSTR_BGT) {
-            printf(" ");
-            print_reg(line->reg1);
-            printf(", ");
-            print_reg(line->reg2);
-            printf(", ");
-            print_jmp_operand(&line->o_jmp);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, reg_to_string(line->reg2));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, jmp_operand_to_string(&line->o_jmp));
         } else if (line->instruction == ASM_INSTR_PUSH ||
                    line->instruction == ASM_INSTR_POP ||
                    line->instruction == ASM_INSTR_NOT) {
-            printf(" ");
-            print_reg(line->reg1);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
         } else if (line->instruction == ASM_INSTR_XCHG ||
                    line->instruction == ASM_INSTR_ADD ||
                    line->instruction == ASM_INSTR_SUB ||
@@ -264,35 +438,35 @@ void print_asm_line(s_asm_line* line)
                    line->instruction == ASM_INSTR_XOR ||
                    line->instruction == ASM_INSTR_SHL ||
                    line->instruction == ASM_INSTR_SHR) {
-            printf(" ");
-            print_reg(line->reg1);
-            printf(", ");
-            print_reg(line->reg2);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, reg_to_string(line->reg2));
         } else if (line->instruction == ASM_INSTR_LD) {
-            printf(" ");
-            print_ls_operand(&line->o_ls);
-            printf(", ");
-            print_reg(line->reg1);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, ls_operand_to_string(&line->o_ls));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
         } else if (line->instruction == ASM_INSTR_ST) {
-            printf(" ");
-            print_reg(line->reg1);
-            printf(", ");
-            print_ls_operand(&line->o_ls);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, ls_operand_to_string(&line->o_ls));
         } else if (line->instruction == ASM_INSTR_CSRRD) {
-            printf(" ");
-            print_reg(line->reg1);
-            printf(", ");
-            print_reg(line->reg2);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, reg_to_string(line->reg2));
         } else if (line->instruction == ASM_INSTR_CSRWR) {
-            printf(" ");
-            print_reg(line->reg1);
-            printf(", ");
-            print_reg(line->reg2);
+            string_builder_append(&builder, " ");
+            string_builder_append_string(&builder, reg_to_string(line->reg1));
+            string_builder_append(&builder, ", ");
+            string_builder_append_string(&builder, reg_to_string(line->reg2));
         }
 
-        printf("\n");
-        return;
+        string_builder_append(&builder, "\n");
+        return string_builder_take(&builder);
     }
 
-    printf("<empty line>\n");
+    return duplicate_string("<empty line>\n");
 }

@@ -9,8 +9,12 @@
 
 typedef enum
 {
-    TRAMPOLINE_ENTRY_SYMBOL,
-    TRAMPOLINE_ENTRY_LITERAL
+    TE_JUMP_LITERAL,
+    TE_JUMP_SYMBOL,
+    TE_LD_IMM_LITERAL,
+    TE_LD_IMM_SYMBOL,
+    TE_ST_MEM_LITERAL,
+    TE_ST_MEM_SYMBOL
 } e_trampoline_entry_type;
 
 typedef struct 

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "asm/code.h"
 
 #include "grammar/grammar.tab.h"
@@ -36,7 +37,11 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < asm_file.curr_line; i++)
     {
-        print_asm_line(asm_file.lines[i]);
+        char* line = asm_line_to_string(asm_file.lines[i]);
+        if (line != NULL) {
+            printf("%s", line);
+            free(line);
+        }
     }
 
     assemble_file("a");

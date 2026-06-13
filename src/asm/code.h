@@ -153,6 +153,9 @@ typedef struct
     s_sym_or_lit** sym_or_lit_list;
     int sym_or_lit_list_n;
 
+    // for error handling and debugging
+    int line_num;
+
     // for later relocation cleanup
     s_section* section_location;
     int bytes_location;
@@ -161,7 +164,9 @@ typedef struct
 
 const char* asm_instruction_name(e_asm_instruction instruction);
 const char* asm_directive_name(e_asm_directive directive);
-void print_asm_line(s_asm_line* line);
+
+// Caller owns the returned string and must free it.
+char* asm_line_to_string(s_asm_line* line);
 
 
 #endif

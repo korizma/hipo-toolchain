@@ -3,6 +3,7 @@
 #include "handler.h"
 #include "elf.h"
 #include "trampoline.h"
+#include <stdio.h>
 
 s_asm_file asm_file;
 

@@ -50,6 +50,7 @@ void add_line(s_asm_line* line)
         asm_file.size += ASM_LINES_INCREMENT;
         asm_file.lines = realloc(asm_file.lines, asm_file.size * sizeof(s_asm_line*));
     }
+    line->line_num = asm_file.curr_line + 1;
     asm_file.lines[asm_file.curr_line++] = line;
 }
 
@@ -146,10 +147,9 @@ void reverse_arr_sym(s_list_n_s* list)
     }
 }
 
-
 long parse_literal_lex(char* lit) {
     if ((strlen(lit) > 2 && lit[1] != 'x') || strlen(lit) <= 2)
-        return atoi(lit);
+        return (long)strtol(lit, NULL, 10);
     return (long)strtol(lit+2, NULL, 16);
 }
 

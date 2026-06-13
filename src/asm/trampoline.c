@@ -38,8 +38,12 @@ static const char* trampoline_type_name(e_trampoline_entry_type type)
 {
     switch (type)
     {
-    case TRAMPOLINE_ENTRY_SYMBOL: return "SYMBOL";
-    case TRAMPOLINE_ENTRY_LITERAL: return "LITERAL";
+    case TE_JUMP_SYMBOL: return "SYMBOL";
+    case TE_JUMP_LITERAL: return "LITERAL";
+    case TE_LD_IMM_SYMBOL: return "LD_IMM_SYMBOL";
+    case TE_LD_IMM_LITERAL: return "LD_IMM_LITERAL";
+    case TE_ST_MEM_SYMBOL: return "ST_MEM_SYMBOL";
+    case TE_ST_MEM_LITERAL: return "ST_MEM_LITERAL";
     }
 
     return "UNKNOWN";
@@ -64,7 +68,7 @@ void print_trampoline()
                trampoline_type_name(entry->type),
                entry->section != 0 ? entry->section->name : "<none>");
 
-        if (entry->type == TRAMPOLINE_ENTRY_SYMBOL)
+        if (entry->type == TE_JUMP_SYMBOL || entry->type == TE_LD_IMM_SYMBOL || entry->type == TE_ST_MEM_SYMBOL)
         {
             printf("%-12s ", entry->symbol != 0 ? entry->symbol : "<none>");
         }
@@ -75,7 +79,12 @@ void print_trampoline()
 
         if (entry->line != 0)
         {
-            print_asm_line(entry->line);
+            char* line = asm_line_to_string(entry->line);
+            if (line != NULL)
+            {
+                printf("%s", line);
+                free(line);
+            }
         }
         else
         {

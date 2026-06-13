@@ -88,7 +88,7 @@ void check_rela_table(s_rela_table* rela_table)
     for (int i = 0; i < rela_table->entry_num; i++)
     {
         s_Elf64_Rela_entry* entry = rela_table->entries[i];
-        s_Elf64_Sym* sym = p.sym_table->symbols[i];
+        s_Elf64_Sym* sym = p.sym_table->symbols[entry->sym_index];
 
         if (sym->binding = STB_GLOBAL)
             continue;

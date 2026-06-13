@@ -1,6 +1,7 @@
 #include "elf.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 void add_to_symbol_table(   char* symbol, 
                             e_Elf64_SymbolType type, 
