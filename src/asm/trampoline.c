@@ -2,6 +2,7 @@
 #include "rela_table.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 s_trampoline trampoline;
 
@@ -70,8 +71,8 @@ static const char* trampoline_type_name(e_trampoline_entry_type type)
 {
     switch (type)
     {
-    case TE_JUMP_SYMBOL: return "SYMBOL";
-    case TE_JUMP_LITERAL: return "LITERAL";
+    case TE_JUMP_SYMBOL: return "JUMP_SYMBOL";
+    case TE_JUMP_LITERAL: return "JUMP_LITERAL";
     case TE_LD_IMM_SYMBOL: return "LD_IMM_SYMBOL";
     case TE_LD_IMM_LITERAL: return "LD_IMM_LITERAL";
     case TE_ST_MEM_SYMBOL: return "ST_MEM_SYMBOL";
@@ -81,10 +82,81 @@ static const char* trampoline_type_name(e_trampoline_entry_type type)
     return "UNKNOWN";
 }
 
+static bool trampoline_entry_uses_symbol(e_trampoline_entry_type type)
+{
+    return type == TE_JUMP_SYMBOL ||
+           type == TE_LD_IMM_SYMBOL ||
+           type == TE_ST_MEM_SYMBOL;
+}
+
+static void print_optional_hex_long(long value)
+{
+    if (value < 0)
+        printf("%-10s", "-");
+    else
+        printf("0x%08lx", (unsigned long)value);
+}
+
+static void print_optional_hex_int(bool has_value, int value)
+{
+    if (!has_value)
+        printf("%-10s", "-");
+    else
+        printf("0x%08x", value);
+}
+
+static void print_trampoline_source_line(s_asm_line* line)
+{
+    if (line == 0)
+    {
+        printf("      source: <none>\n");
+        return;
+    }
+
+    char* source = asm_line_to_string(line);
+    if (source == NULL)
+    {
+        printf("      source: <unavailable>\n");
+        return;
+    }
+
+    printf("      source: %s", source);
+
+    if (source[0] == '\0' || source[strlen(source) - 1] != '\n')
+        printf("\n");
+
+    free(source);
+}
+
 void print_trampoline()
 {
-    printf("Trampoline: entries=%d, capacity=%d\n", trampoline.entry_num, trampoline.size);
-    printf("  %-8s %-16s %-12s %s\n", "Type", "Section", "Value", "Line");
+    printf("\nTrampoline table\n");
+    printf("  entries=%d, capacity=%d\n", trampoline.entry_num, trampoline.size);
+
+    if (trampoline.entry_num == 0)
+    {
+        printf("  <empty>\n");
+        return;
+    }
+
+    printf("  %-3s %-14s %-14s %-10s %-10s %-8s %-8s %s\n",
+           "#",
+           "Type",
+           "Section",
+           "Use@",
+           "Pool@",
+           "Disp",
+           "State",
+           "Target");
+    printf("  %-3s %-14s %-14s %-10s %-10s %-8s %-8s %s\n",
+           "---",
+           "--------------",
+           "--------------",
+           "----------",
+           "----------",
+           "--------",
+           "--------",
+           "----------------");
 
     for (int i = 0; i < trampoline.entry_num; i++)
     {
@@ -92,36 +164,41 @@ void print_trampoline()
 
         if (entry == 0)
         {
-            printf("  <null entry>\n");
+            printf("  %-3d <null entry>\n", i);
             continue;
         }
 
-        printf("  %-8s %-16s ",
+        printf("  %-3d %-14s %-14s ",
+               i,
                trampoline_type_name(entry->type),
                entry->section != 0 ? entry->section->name : "<none>");
 
-        if (entry->type == TE_JUMP_SYMBOL || entry->type == TE_LD_IMM_SYMBOL || entry->type == TE_ST_MEM_SYMBOL)
+        print_optional_hex_int(entry->line != 0, entry->line != 0 ? entry->line->bytes_location : 0);
+        printf(" ");
+
+        print_optional_hex_long(entry->trampoline_location);
+        printf(" ");
+
+        if (entry->line != 0 && entry->trampoline_location >= 0)
+            printf("%-8ld", entry->trampoline_location - entry->line->bytes_location);
+        else
+            printf("%-8s", "-");
+
+        printf(" %-8s ",
+               entry->is_done ? "done" : "pending");
+
+        if (trampoline_entry_uses_symbol(entry->type))
         {
-            printf("%-12s ", entry->symbol != 0 ? entry->symbol : "<none>");
+            printf("symbol %s\n", entry->symbol != 0 ? entry->symbol : "<none>");
         }
         else
         {
-            printf("%-12ld ", entry->literal);
+            printf("literal %ld (0x%08lx)\n",
+                   entry->literal,
+                   (unsigned long)entry->literal);
         }
 
-        if (entry->line != 0)
-        {
-            char* line = asm_line_to_string(entry->line);
-            if (line != NULL)
-            {
-                printf("%s", line);
-                free(line);
-            }
-        }
-        else
-        {
-            printf("<none>\n");
-        }
+        print_trampoline_source_line(entry->line);
     }
 }
 
@@ -149,6 +226,7 @@ void write_trampoline_literal(s_trampoline_entry* entry)
     update_section_size_in_sym_table(entry->section);
 
     write_displacement_to_line(entry->line, entry->trampoline_location);
+    entry->is_done = true;
 }
 
 void write_trampoline_symbol(s_trampoline_entry* entry)
@@ -172,6 +250,7 @@ void write_trampoline_symbol(s_trampoline_entry* entry)
     write_displacement_to_line(entry->line, entry->trampoline_location);
 
     create_rela_entry(entry->section, entry->trampoline_location, check_symbol_table(entry->symbol), R_HIPO_32, 0);
+    entry->is_done = true;
 }
 
 
@@ -180,10 +259,16 @@ s_trampoline_entry* find_matching_trampoline_entry(s_trampoline_entry* entry)
     for (int i = 0; i < trampoline.entry_num; i++)
     {
         s_trampoline_entry* match = trampoline.entries[i];
-        if (!match->is_done)
+        if (match == 0 || !match->is_done)
             return NULL;
 
-        if (match->section == entry->section && ((match->symbol == entry->symbol && entry->symbol != 0) || (match->literal == entry->literal && entry->literal != 0)) )
+        if (match->section != entry->section)
+            continue;
+
+        if (entry->symbol != 0 && match->symbol != 0 && strcmp(match->symbol, entry->symbol) == 0)
+            return match;
+
+        if (entry->symbol == 0 && match->symbol == 0 && match->literal == entry->literal)
             return match;
     }
     return NULL;

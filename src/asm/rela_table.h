@@ -37,6 +37,8 @@ s_section* create_section_from_rela_table(s_rela_table* rela_table);
 
 void print_rela_table(s_rela_table* rela_table);
 
+void print_all_rela_tables();
+
 // every symbols relocation was used as if the symbol is global
 // this function checks for symbols that are LOCAL and adjusts the rela table
 void check_rela_table(s_rela_table* rela_table);

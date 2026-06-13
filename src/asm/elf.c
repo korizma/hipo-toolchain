@@ -96,6 +96,8 @@ void print_program()
         print_section(p.sections[i]);
     }
 
+    print_all_rela_tables();
+
     printf("\nSymbol table:\n");
     if (p.sym_table == 0)
     {

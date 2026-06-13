@@ -1,5 +1,4 @@
 #include "section.h"
-#include "rela_table.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -74,5 +73,4 @@ void print_section(s_section* section)
         }
     }
 
-    print_rela_table(section->rela_table);
 }

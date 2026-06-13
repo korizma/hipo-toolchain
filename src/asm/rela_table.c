@@ -51,19 +51,54 @@ static const char* rela_type_name(e_Elf64_reloc_type type)
     return "R_HIPO_UNKNOWN";
 }
 
+static const char* rela_symbol_name(int sym_index)
+{
+    if (p.sym_table == 0 ||
+        sym_index < 0 ||
+        sym_index >= p.sym_table->symbol_num ||
+        p.sym_table->symbols[sym_index] == 0 ||
+        p.sym_table->symbols[sym_index]->st_name == 0)
+    {
+        return "<invalid>";
+    }
+
+    return p.sym_table->symbols[sym_index]->st_name;
+}
+
 void print_rela_table(s_rela_table* rela_table)
 {
     if (rela_table == 0)
     {
-        printf("  Rela table: <none>\n");
+        printf("  Relocation table: <none>\n");
         return;
     }
 
-    printf("  Rela table for section %s: entries=%d, capacity=%d\n",
-           rela_table->section != 0 ? rela_table->section->name : "<none>",
+    printf("  Relocation table for %s\n",
+           rela_table->section != 0 ? rela_table->section->name : "<none>");
+    printf("    entries=%d, capacity=%d\n",
            rela_table->entry_num,
            rela_table->size);
-    printf("    %-8s %-8s %-14s %s\n", "Offset", "Sym", "Type", "Addend");
+
+    if (rela_table->entry_num == 0)
+    {
+        printf("    <empty>\n");
+        return;
+    }
+
+    printf("    %-3s %-10s %-8s %-20s %-14s %-8s\n",
+           "#",
+           "Offset",
+           "SymIdx",
+           "Symbol",
+           "Type",
+           "Addend");
+    printf("    %-3s %-10s %-8s %-20s %-14s %-8s\n",
+           "---",
+           "----------",
+           "--------",
+           "--------------------",
+           "--------------",
+           "--------");
 
     for (int i = 0; i < rela_table->entry_num; i++)
     {
@@ -71,16 +106,43 @@ void print_rela_table(s_rela_table* rela_table)
 
         if (entry == 0)
         {
-            printf("    <null entry>\n");
+            printf("    %-3d <null entry>\n", i);
             continue;
         }
 
-        printf("    0x%06lx %-8d %-14s %ld\n",
+        printf("    %-3d 0x%08lx %-8d %-20s %-14s %-8ld\n",
+               i,
                entry->r_offset,
                entry->sym_index,
+               rela_symbol_name(entry->sym_index),
                rela_type_name(entry->reloc_type),
                entry->r_addend);
     }
+}
+
+void print_all_rela_tables()
+{
+    int printed = 0;
+
+    printf("\nRelocation tables\n");
+
+    if (p.number_of_sections == 0)
+    {
+        printf("  <no sections>\n");
+        return;
+    }
+
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        if (p.sections[i] == 0 || p.sections[i]->rela_table == 0)
+            continue;
+
+        print_rela_table(p.sections[i]->rela_table);
+        printed = 1;
+    }
+
+    if (!printed)
+        printf("  <none>\n");
 }
 
 void check_rela_table(s_rela_table* rela_table)
@@ -91,13 +153,26 @@ void check_rela_table(s_rela_table* rela_table)
     for (int i = 0; i < rela_table->entry_num; i++)
     {
         s_Elf64_Rela_entry* entry = rela_table->entries[i];
+
+        if (entry == 0 ||
+            p.sym_table == 0 ||
+            entry->sym_index < 0 ||
+            entry->sym_index >= p.sym_table->symbol_num)
+        {
+            continue;
+        }
+
         s_Elf64_Sym* sym = p.sym_table->symbols[entry->sym_index];
 
-        if (sym->binding = STB_GLOBAL)
+        if (sym == 0 || sym->binding == STB_GLOBAL || sym->section == 0)
             continue;
 
         s_section* sym_section = sym->section;
         int section_indx = check_symbol_table(sym_section->name);
+
+        if (section_indx == -1)
+            continue;
+
         entry->sym_index = section_indx;
         entry->r_addend = sym->st_value;
     }
