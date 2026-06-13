@@ -24,9 +24,21 @@ void assemble_file(const char* filename)
     bool has_error = false;
     for (int i = 0; i < asm_file.curr_line; i++)
     {
-        int err = handle_line(asm_file.lines[i]);
+        s_error* err = handle_line(asm_file.lines[i]);
         if (err != 0)
+        {
+            print_error(err);
+            free_error(err);
             has_error = true;
+        }
+    }
+
+    s_error* err = finalize_symbol_table();
+    if (err != 0)
+    {
+        print_error(err);
+        free_error(err);
+        has_error = true;
     }
 
     if (has_error)

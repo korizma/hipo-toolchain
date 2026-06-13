@@ -1,7 +1,7 @@
 #include "elf.h"
+#include "error.h"
 #include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
 
 void add_to_symbol_table(   char* symbol, 
                             e_Elf64_SymbolType type, 
@@ -81,7 +81,7 @@ int get_and_set_reference(char* symbol)
     return indx;
 }
 
-int finalize_symbol_table()
+s_error* finalize_symbol_table()
 {
     for (int i = 0; i < p.sym_table->symbol_num; i++)
     {
@@ -89,9 +89,8 @@ int finalize_symbol_table()
 
         if (sym->state != ST_ENTRY_STATE_COMPLETE)
         {
-            printf("Error: symbol '%s' is referenced but not defined\n", sym->st_name);
-            return -1;
+            return new_symbol_error(0, ERR_UNRESOLVED_SYMBOL, sym->st_name);
         }
     }
-    return 0;
+    return NULL;
 }

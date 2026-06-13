@@ -65,7 +65,7 @@ void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directi
     h_arr.entries[h_arr.next_avail++] = new_entry;
 }
 
-int handle_line(s_asm_line* line)
+s_error* handle_line(s_asm_line* line)
 {
     for (int i = 0; i < h_arr.next_avail; i++) 
     {
@@ -83,7 +83,7 @@ int handle_line(s_asm_line* line)
             return entry->handler(line, p.curr_section);
         }
     }
-    return -1;
+    return new_error(line, ERR_MISSING_HANDLER);
 }
 
 void register_init_handlers()

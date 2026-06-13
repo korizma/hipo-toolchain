@@ -2,11 +2,12 @@
 #define HANDLER_H
 #include "elf.h"
 #include "code.h"
+#include "error.h"
 
 #define HANDLERS_START_SIZE 10
 #define HANDLERS_INCREASE_SIZE 10
 
-typedef int (*handler_f)(s_asm_line* , s_section*);
+typedef s_error* (*handler_f)(s_asm_line* , s_section*);
 
 typedef enum {
     HANDLER_LABEL,
@@ -35,7 +36,7 @@ void register_handler(e_handler_kind kind, e_asm_instruction inst, e_asm_directi
 
 void register_handler_struct(s_handler_entry* entry);
 
-int handle_line(s_asm_line* line);
+s_error* handle_line(s_asm_line* line);
 
 void register_init_handlers();
 

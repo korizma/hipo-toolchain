@@ -2,47 +2,43 @@
 #include "code.h"
 #include "trampoline.h"
 #include <stdlib.h>
-#include <stdio.h>
 #include <string.h>
 
 extern s_program p;
 
-int handle_halt(s_asm_line* line, s_section* s)
+s_error* handle_halt(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction halt defined outside of a section!\n");
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
     char* bin = translate_to_binary(oc, 0, 0, 0, 0, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
     free(bin);
-    return 0;
+    return NULL;
 }
 
-int handle_int(s_asm_line* line, s_section* s)
+s_error* handle_int(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
     char* bin = translate_to_binary(oc, 0, 0, 0, 0, 0);
     write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
     free(bin);
-    return 0;
+    return NULL;
 }
 
-int handle_iret(s_asm_line* line, s_section* s)
+s_error* handle_iret(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     // pop status
@@ -71,15 +67,14 @@ int handle_iret(s_asm_line* line, s_section* s)
     free(bin1);
     free(bin2);
 
-    return 0;
+    return NULL;
 }
 
-int handle_call(s_asm_line* line, s_section* s)
+s_error* handle_call(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = 0b0010, mod, regA, regB;
@@ -91,8 +86,7 @@ int handle_call(s_asm_line* line, s_section* s)
         s_Elf64_Sym* sym = p.sym_table->symbols[indx];
         if (sym->type == STT_SECTION)
         {
-            printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
-            return -1;
+            return new_symbol_error(line, ERR_SECTION_AS_DESTINATION, sym->st_name);
         }
 
         // trampoline pool
@@ -108,7 +102,7 @@ int handle_call(s_asm_line* line, s_section* s)
         char* bin = translate_to_binary(oc, mod, regA, regB, 0, 0);
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-        return 0;
+        return NULL;
     }
     else if (line->o_jmp.is_literal)
     {
@@ -123,7 +117,7 @@ int handle_call(s_asm_line* line, s_section* s)
             char* bin = translate_to_binary(oc, mod, regA, regB, 0, disp);
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-            return 0;
+            return NULL;
         }
 
         add_trampoline_entry(s, line, line->o_jmp.literal, 0, TE_JUMP_LITERAL);
@@ -138,17 +132,16 @@ int handle_call(s_asm_line* line, s_section* s)
         char* bin = translate_to_binary(oc, mod, regA, regB, 0, 0);
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-        return 0;
+        return NULL;
     }
-    return -1;
+    return new_error(line, ERR_INVALID_JUMP_OPERAND);
 }
 
-int handle_ret(s_asm_line* line, s_section* s)
+s_error* handle_ret(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     // pop pc
@@ -164,15 +157,14 @@ int handle_ret(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_branch(s_asm_line* line, s_section* s)
+s_error* handle_branch(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = 0b0011, mod, regA, regB = line->reg1, regC = line->reg2;
@@ -191,8 +183,7 @@ int handle_branch(s_asm_line* line, s_section* s)
 
         if (sym->type == STT_SECTION)
         {
-            printf("ERROR: Instruction %s used section as a destination!\n", asm_instruction_name(line->instruction));
-            return -1;
+            return new_symbol_error(line, ERR_SECTION_AS_DESTINATION, sym->st_name);
         }
         
         // trampoline pool
@@ -213,7 +204,7 @@ int handle_branch(s_asm_line* line, s_section* s)
         char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-        return 0;       
+        return NULL;       
     }
     else if (line->o_jmp.is_literal)
     {
@@ -236,7 +227,7 @@ int handle_branch(s_asm_line* line, s_section* s)
             char* bin = translate_to_binary(oc, mod, regA, regB, 0, disp);
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-            return 0;
+            return NULL;
         }
 
         add_trampoline_entry(s, line, line->o_jmp.literal, 0, TE_JUMP_LITERAL);
@@ -256,17 +247,16 @@ int handle_branch(s_asm_line* line, s_section* s)
         char* bin = translate_to_binary(oc, mod, regA, regB, 0, 0);
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-        return 0;
+        return NULL;
     }
-    return -1;
+    return new_error(line, ERR_INVALID_JUMP_OPERAND);
 }
 
-int handle_push(s_asm_line* line, s_section* s)
+s_error* handle_push(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
     // OC=0x8 MOD=0x1 A=sp B=0 C=gpr D=-4
     char op = 0b1000;
@@ -281,15 +271,14 @@ int handle_push(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_pop(s_asm_line* line, s_section* s)
+s_error* handle_pop(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     // reg <= mem[sp]; sp <= sp + 4;
@@ -305,15 +294,14 @@ int handle_pop(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_xchg(s_asm_line* line, s_section* s)
+s_error* handle_xchg(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
@@ -323,15 +311,14 @@ int handle_xchg(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_arthm(s_asm_line* line, s_section* s)
+s_error* handle_arthm(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
@@ -342,15 +329,14 @@ int handle_arthm(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_not(s_asm_line* line, s_section* s)
+s_error* handle_not(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
@@ -361,15 +347,14 @@ int handle_not(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_logic(s_asm_line* line, s_section* s)
+s_error* handle_logic(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
@@ -380,15 +365,14 @@ int handle_logic(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
-int handle_sh(s_asm_line* line, s_section* s)
+s_error* handle_sh(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = find_operation_code(line->instruction);
@@ -399,16 +383,15 @@ int handle_sh(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
 // ld operand, reg1 <=> reg1 <= operand
-int handle_ld(s_asm_line* line, s_section* s)
+s_error* handle_ld(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = 0b1001, mod, regA = 0, regB = 0, regC = 0;
@@ -442,7 +425,7 @@ int handle_ld(s_asm_line* line, s_section* s)
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
             free(bin);
-            return 0;
+            return NULL;
         }
 
         disp = line->o_ls.literal & 0xFFF;
@@ -473,7 +456,7 @@ int handle_ld(s_asm_line* line, s_section* s)
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
         free(bin);
-        return 0;
+        return NULL;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_LITERAL)
     {
@@ -484,8 +467,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: MEM LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
-            return -1;
+            return new_operand_literal_error(line, ERR_LITERAL_OUT_OF_RANGE_12B, line->o_ls.kind, line->o_ls.literal);
         }
 
         disp = line->o_ls.literal & 0xFFF; 
@@ -495,8 +477,7 @@ int handle_ld(s_asm_line* line, s_section* s)
         // this asm instruction cant be mapped to one machine instruciton
         // it can however be mapped to two instructions, but im not sure if thats correct
         // throwing error for now
-        printf("ERROR: ld operand: MEM SYMBOL is not supported!\n");
-        return -1;
+        return new_operand_error(line, ERR_UNSUPPORTED_OPERAND, line->o_ls.kind);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -525,8 +506,7 @@ int handle_ld(s_asm_line* line, s_section* s)
 
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: ld operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
-            return -1;
+            return new_operand_literal_error(line, ERR_LITERAL_OUT_OF_RANGE_12B, line->o_ls.kind, line->o_ls.literal);
         }
 
         disp = line->o_ls.literal & 0xFFF; 
@@ -536,8 +516,7 @@ int handle_ld(s_asm_line* line, s_section* s)
         // symbol is always > 12bits, unless its equ and has deterministic value
         // equ not implemented
         // throwing error for now
-        printf("ERROR: ld operand: REG_INDIRECT_SYMBOL is not supported!\n");
-        return -1;
+        return new_operand_error(line, ERR_UNSUPPORTED_OPERAND, line->o_ls.kind);
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
@@ -545,16 +524,15 @@ int handle_ld(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
 // st reg, operand; operand <= return 
-int handle_st(s_asm_line* line, s_section* s)
+s_error* handle_st(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     char oc = 0b1000, mod, regA = 0, regB = 0, regC = 0;
@@ -562,13 +540,11 @@ int handle_st(s_asm_line* line, s_section* s)
 
     if (line->o_ls.kind == ASM_OPERAND_LS_IMM_LITERAL)
     {
-        printf("ERROR: st operand: Invalid operand: IMM_LITERAL!");
-        return -1;
+        return new_operand_error(line, ERR_INVALID_OPERAND, line->o_ls.kind);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_IMM_SYMBOL)
     {
-        printf("ERROR: st operand: Invalid operand: IMM_SYMBOL!");
-        return -1;
+        return new_operand_error(line, ERR_INVALID_OPERAND, line->o_ls.kind);
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_LITERAL)
     {
@@ -597,7 +573,7 @@ int handle_st(s_asm_line* line, s_section* s)
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
             free(bin);
-            return 0;
+            return NULL;
         }
 
         disp = line->o_ls.literal & 0xFFF; 
@@ -627,7 +603,7 @@ int handle_st(s_asm_line* line, s_section* s)
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
         free(bin);
-        return 0;
+        return NULL;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {
@@ -657,8 +633,7 @@ int handle_st(s_asm_line* line, s_section* s)
         
         if (!long_fit_in_12b(line->o_ls.literal))
         {
-            printf("ERROR: st operand: REG INDIRECT LITERAL %x is bigger than 12 bits!\n", line->o_ls.literal);
-            return -1;
+            return new_operand_literal_error(line, ERR_LITERAL_OUT_OF_RANGE_12B, line->o_ls.kind, line->o_ls.literal);
         }
 
         disp = line->o_ls.literal & 0xFFF; 
@@ -668,8 +643,7 @@ int handle_st(s_asm_line* line, s_section* s)
         // symbol is always > 12bits, unless its equ and has deterministic value
         // equ not implemented
         // throwing error for now
-        printf("ERROR: st operand: Invalid operand: REG INDIRECT SYMBOL!");
-        return -1;
+        return new_operand_error(line, ERR_INVALID_OPERAND, line->o_ls.kind);
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
@@ -677,19 +651,18 @@ int handle_st(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
 
 // csrrd %csr, %gpr; gpr <= csr   
 // reg1 = csr, reg2 = gpr    
 // csrwr %gpr, %csr; csr <= gpr;  
 // reg1 = gpr, reg2 = csr
-int handle_control_rw(s_asm_line* line, s_section* s)
+s_error* handle_control_rw(s_asm_line* line, s_section* s)
 {
     if (s == 0)
     {
-        printf("ERROR: Instruction %s defined outside of a section!\n", asm_instruction_name(line->instruction));
-        return -1;
+        return new_error(line, ERR_OUTSIDE_SECTION);
     }
 
     // A<=B
@@ -701,5 +674,5 @@ int handle_control_rw(s_asm_line* line, s_section* s)
 
     free(bin);
 
-    return 0;
+    return NULL;
 }
