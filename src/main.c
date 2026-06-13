@@ -30,6 +30,7 @@ int main(int argc, char **argv)
         printf("Parse succeeded.\n");
     } else {
         printf("Parse failed.\n");
+        return -1;
     }
 
     fclose(yyin);

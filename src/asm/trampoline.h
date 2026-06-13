@@ -3,6 +3,7 @@
 
 #include "section.h"
 #include "code.h"
+#include "error.h"
 
 #define TRAMPOLINE_START_SIZE 10
 #define TRAMPOLINE_INCREMENT 10
@@ -45,17 +46,17 @@ void free_trampoline();
 
 void add_trampoline_entry(s_section* s, s_asm_line* line, long literal, char* symbol, e_trampoline_entry_type type);
 
-void write_trampolines();
+int write_trampolines();
 
 void print_trampoline();
 
-void write_trampoline_literal(s_trampoline_entry* entry);
+s_error* write_trampoline_literal(s_trampoline_entry* entry);
 
-void write_trampoline_symbol(s_trampoline_entry* entry);
+s_error* write_trampoline_symbol(s_trampoline_entry* entry);
 
 // if they use the same symbol or literal and are in the same
 s_trampoline_entry* find_matching_trampoline_entry(s_trampoline_entry* entry);
 
-void write_displacement_to_line(s_asm_line* line, long trampoline_location);
+s_error* write_displacement_to_line(s_asm_line* line, long trampoline_location);
 
 #endif 

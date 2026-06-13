@@ -221,7 +221,7 @@ s_error* handle_branch(s_asm_line* line, s_section* s)
                 case ASM_INSTR_BNE: mod = 0b1010; break;
                 case ASM_INSTR_JMP: mod = 0b1000; break;
             }
-            regA = ASM_REG_PC;
+            regA = ASM_REG_R0;
             disp = line->o_jmp.literal & 0xFFF;
 
             char* bin = translate_to_binary(oc, mod, regA, regB, 0, disp);
@@ -460,24 +460,111 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_LITERAL)
     {
-        // A <= mem32[B + C + D]
-        mod = 0b0010;
-        regA = line->reg1;
-        regB = regC = ASM_REG_R0;
+        
 
-        if (!long_fit_in_12b(line->o_ls.literal))
+        if (long_fit_in_12b(line->o_ls.literal))
         {
-            return new_operand_literal_error(line, ERR_LITERAL_OUT_OF_RANGE_12B, line->o_ls.kind, line->o_ls.literal);
+            // the literal does not fit in 12bits so we need to use it from the pool
+            // using OC=1001, MOD = 0010
+            // A <= mem[B + C + D]
+            add_trampoline_entry(s, line, line->o_ls.literal, 0, TE_LD_IMM_LITERAL);
+
+            oc = 0b1001;
+            mod = 0b0010;
+            regA = line->reg1;
+            regB = ASM_REG_PC;
+            regC = ASM_REG_R0;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            // disp will be edited in trampoline
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
+        }
+        else
+        {   
+            // reg <= symbol
+            // A <= B + D
+            oc = 0b1001;
+            mod = 0b0001;
+            regA = line->reg1;
+            regB = ASM_REG_R0;
+            disp = line->o_ls.literal & 0xFFF;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
         }
 
-        disp = line->o_ls.literal & 0xFFF; 
+
+        // A <= mem32[B + C + D]
+        // reg <= mem32[literal]
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = line->reg1;
+        regC = 0;
+        disp = 0;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_MEM_SYMBOL)
     {
-        // this asm instruction cant be mapped to one machine instruciton
-        // it can however be mapped to two instructions, but im not sure if thats correct
-        // throwing error for now
-        return new_operand_error(line, ERR_UNSUPPORTED_OPERAND, line->o_ls.kind);
+        
+
+        if (long_fit_in_12b(line->o_ls.literal))
+        {
+            // the literal does not fit in 12bits so we need to use it from the pool
+            // using OC=1001, MOD = 0010
+            // A <= mem[B + C + D]
+            add_trampoline_entry(s, line, 0, line->o_ls.symbol, TE_LD_IMM_SYMBOL);
+
+            oc = 0b1001;
+            mod = 0b0010;
+            regA = line->reg1;
+            regB = ASM_REG_PC;
+            regC = ASM_REG_R0;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            // disp will be edited in trampoline
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
+        }
+        else
+        {   
+           // reg <= symbol
+            // A <= B + D
+            oc = 0b1001;
+            mod = 0b0001;
+            regA = line->reg1;
+            regB = ASM_REG_R0;
+            disp = line->o_ls.literal & 0xFFF;
+
+            line->section_location = s;
+            line->bytes_location = s->next_free;
+
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+            free(bin);
+        }
+
+
+        // A <= mem32[B + C + D]
+        // reg <= mem32[literal]
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = line->reg1;
+        regC = 0;
+        disp = 0;
     }
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG)
     {

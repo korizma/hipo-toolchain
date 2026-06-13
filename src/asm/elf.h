@@ -14,6 +14,8 @@ typedef struct
     s_section** sections, *curr_section;
     int number_of_sections, section_arr_size;
     s_symbol_table* sym_table;
+
+    bool has_ended;
 } s_program;
 
 extern s_program p;

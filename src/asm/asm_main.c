@@ -31,6 +31,8 @@ void assemble_file(const char* filename)
             free_error(err);
             has_error = true;
         }
+        if (p.has_ended)
+            break;
     }
 
     if (p.curr_section != 0)

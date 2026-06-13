@@ -1,4 +1,5 @@
 #include "error.h"
+#include "handlers_impl.h"  
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -145,6 +146,12 @@ void print_error(s_error* err)
         break;
     case ERR_UNRESOLVED_SYMBOL:
         printf("symbol '%s' is referenced but not defined\n", error_symbol(err));
+        break;
+    case ERR_TRAMPOLINE_DISPLACEMENT_TOO_LARGE:
+        printf("Instruction %s has a jump displacement that is too large for a 12-bit signed value!\n", line_instruction_name(err->line));
+        break;
+    case ERR_SKIP_BYTE_LIMIT:
+        printf("Directive .skip has a byte count that is outside the allowed range of 1 to %d bytes!\n", SKIP_BYTE_LIMIT - 1);
         break;
     }
 

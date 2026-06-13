@@ -96,7 +96,7 @@ s_error* handle_word(s_asm_line* line, s_section* s)
             // suppose the symbol is global, if not change in cleanup
             create_rela_entry(s, s->next_free, indx, R_HIPO_32, 0);
 
-            char bin[WORD_SIZE];
+            char bin[WORD_SIZE] = {0, 0, 0, 0};
             write_bytes_to_section(s, bin, WORD_SIZE);
         }
     }
@@ -108,6 +108,11 @@ s_error* handle_skip(s_asm_line* line, s_section* s)
     if (s == 0)
     {
         return new_error(line, ERR_OUTSIDE_SECTION);
+    }
+
+    if (line->byte_num <= 0 || line->byte_num >= SKIP_BYTE_LIMIT)
+    {
+        return new_error(line, ERR_SKIP_BYTE_LIMIT);   
     }
 
     update_label_size_if_last(s, line->byte_num);
@@ -143,6 +148,7 @@ s_error* handle_end(s_asm_line* line, s_section* s)
     update_section_size_in_sym_table(s);
 
     p.curr_section = 0;
+    p.has_ended = true;
     return NULL;
 }
 

@@ -10,6 +10,7 @@ void init_program()
     p.sections = (s_section**)malloc(sizeof(s_section*)*PROGRAM_START_SECTION_SIZE);
     p.section_arr_size = PROGRAM_START_SECTION_SIZE;
     p.number_of_sections = 0;
+    p.has_ended = false;
 
     p.sym_table = (s_symbol_table*)malloc(sizeof(s_symbol_table));
     p.sym_table->symbol_num = 0;

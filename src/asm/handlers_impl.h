@@ -3,6 +3,7 @@
 
 #define INSTRUCTION_BYTE_LEN 4
 #define WORD_SIZE 4
+#define SKIP_BYTE_LIMIT 2 << 20
 
 #include "code.h"
 #include "elf.h"

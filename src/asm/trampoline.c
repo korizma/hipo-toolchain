@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "handlers_impl.h"
 
 s_trampoline trampoline;
 
@@ -33,8 +34,10 @@ void add_trampoline_entry(s_section* s, s_asm_line* line, long literal, char* sy
     trampoline.entries[trampoline.entry_num++] = new_entry;
 }
 
-void write_trampolines()
+int write_trampolines()
 {
+    s_error* error = NULL;
+    bool has_error = false;
     for (int i = 0; i < trampoline.entry_num; i++)
     {
         s_trampoline_entry* entry = trampoline.entries[i];
@@ -45,26 +48,46 @@ void write_trampolines()
         switch (entry->type)
         {
         case TE_JUMP_LITERAL:
-            write_trampoline_literal(entry);
+            error = write_trampoline_literal(entry);
+            if (error != NULL)
+                has_error = true;
             break;
         case TE_JUMP_SYMBOL:
-            write_trampoline_symbol(entry);
+            error = write_trampoline_symbol(entry);
+            if (error != NULL)
+                has_error = true;
             break;
         case TE_LD_IMM_LITERAL:
-            write_trampoline_literal(entry);
+            error = write_trampoline_literal(entry);
+            if (error != NULL)
+                has_error = true;
             break;
         case TE_LD_IMM_SYMBOL:
-            write_trampoline_symbol(entry);
+            error = write_trampoline_symbol(entry);
+            if (error != NULL)
+                has_error = true;   
             break;
         case TE_ST_MEM_LITERAL:
-            write_trampoline_literal(entry);
+            error = write_trampoline_literal(entry);
+            if (error != NULL)
+                has_error = true;
             break;
         case TE_ST_MEM_SYMBOL:
-            write_trampoline_symbol(entry);
+            error = write_trampoline_symbol(entry);
+            if (error != NULL)
+                has_error = true;
             break;
         }
+
+        if (error != NULL)
+           free(error);
     }
 
+    
+    if (!has_error)
+        return 0;
+
+    return -1;
 }
 
 static const char* trampoline_type_name(e_trampoline_entry_type type)
@@ -202,7 +225,7 @@ void print_trampoline()
     }
 }
 
-void write_trampoline_literal(s_trampoline_entry* entry)
+s_error* write_trampoline_literal(s_trampoline_entry* entry)
 {
     s_trampoline_entry* match = find_matching_trampoline_entry(entry);
     if (match != NULL)
@@ -210,12 +233,12 @@ void write_trampoline_literal(s_trampoline_entry* entry)
         write_displacement_to_line(entry->line, match->trampoline_location);
         entry->trampoline_location = match->trampoline_location;
         entry->is_done = true;
-        return;
+        return NULL;
     }
 
     long literal = entry->literal;
     char bin[4];
-    bin[0] = literal & 0xF;
+    bin[0] = literal & 0xFF;
     bin[1] = (literal >> 8) & 0xFF;
     bin[2] = (literal >> 16) & 0xFF;
     bin[3] = (literal >> 24) & 0xFF;
@@ -227,30 +250,37 @@ void write_trampoline_literal(s_trampoline_entry* entry)
 
     write_displacement_to_line(entry->line, entry->trampoline_location);
     entry->is_done = true;
+    return NULL;
 }
 
-void write_trampoline_symbol(s_trampoline_entry* entry)
+s_error* write_trampoline_symbol(s_trampoline_entry* entry)
 {
     s_trampoline_entry* match = find_matching_trampoline_entry(entry);
     if (match != NULL)
     {
-        write_displacement_to_line(entry->line, match->trampoline_location);
+        s_error* err = write_displacement_to_line(entry->line, match->trampoline_location);
+        if (err != NULL)
+            return err;
         entry->trampoline_location = match->trampoline_location;
         entry->is_done = true;
-        return;
+        return NULL;
     }
 
     char bin[4] = {0,0,0,0};
 
     entry->trampoline_location = entry->section->next_free;
+    s_error* err = write_displacement_to_line(entry->line, entry->trampoline_location);
+    if (err != NULL)
+        return err;
+
     write_bytes_to_section(entry->section, bin, TRAMPOLINE_ONE_ENTRY_MEM_SIZE);
     
     update_section_size_in_sym_table(entry->section);
 
-    write_displacement_to_line(entry->line, entry->trampoline_location);
 
     create_rela_entry(entry->section, entry->trampoline_location, check_symbol_table(entry->symbol), R_HIPO_32, 0);
     entry->is_done = true;
+    return NULL;
 }
 
 
@@ -274,9 +304,14 @@ s_trampoline_entry* find_matching_trampoline_entry(s_trampoline_entry* entry)
     return NULL;
 }
 
-void write_displacement_to_line(s_asm_line* line, long trampoline_location)
+s_error* write_displacement_to_line(s_asm_line* line, long trampoline_location)
 {
     long value_12b = trampoline_location - line->bytes_location;
+
+    if (!long_fit_in_12b(value_12b))
+    {
+        return new_error(line, ERR_TRAMPOLINE_DISPLACEMENT_TOO_LARGE);
+    }
 
     int line_location_in_section = line->bytes_location;
     s_section* line_section = line->section_location;
@@ -289,6 +324,7 @@ void write_displacement_to_line(s_asm_line* line, long trampoline_location)
     line_section->bytes[line_location_in_section + 3] = c1c2;
     line_section->bytes[line_location_in_section + 2] &= 0xF0;
     line_section->bytes[line_location_in_section + 2] |= c3;
+    return NULL;
 }
 
 void free_trampoline()
