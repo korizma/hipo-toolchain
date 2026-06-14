@@ -403,7 +403,7 @@ char* asm_line_to_string(s_asm_line* line)
             string_builder_appendf(&builder, " %s", line->ascii_string ? line->ascii_string : "<missing string>");
         } else if (line->directive == ASM_DIR_EQU) {
             string_builder_appendf(&builder, " %s, ", line->new_symbol ? line->new_symbol : "<missing symbol>");
-            string_builder_append_string(&builder, expr_to_string(&line->expression));
+            string_builder_append_string(&builder, expr_to_string(line->expression));
         }
 
         string_builder_append(&builder, "\n");

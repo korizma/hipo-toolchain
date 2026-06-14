@@ -136,7 +136,7 @@ s_error* handle_ascii(s_asm_line* line, s_section* s)
 
 s_error* handle_equ(s_asm_line* line, s_section* s)
 {
-    bool invalid = expr_is_invalid(&line->expression);
+    bool invalid = expr_is_invalid(line->expression);
     if (invalid)
     {
         return new_symbol_error(line, ERR_EXPR_INVALID, line->new_symbol);
@@ -146,6 +146,8 @@ s_error* handle_equ(s_asm_line* line, s_section* s)
     if (indx == -1)
     {
         add_to_symbol_table(line->new_symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_EQU);
+        int indx = check_symbol_table(line->new_symbol);
+        p.sym_table->symbols[indx]->equ_expr = line->expression;
     }
     else
     {
@@ -161,6 +163,7 @@ s_error* handle_equ(s_asm_line* line, s_section* s)
         sym->type = STT_NOTYPE;
         sym->visibility = STV_DEFAULT;
         sym->state = ST_ENTRY_STATE_EQU;
+        sym->equ_expr = line->expression;
     }
 
     return NULL;

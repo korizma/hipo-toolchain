@@ -110,7 +110,7 @@ s_error* handle_call(s_asm_line* line, s_section* s)
         {
             // literal small enough to fit in 12b 
             mod = 0b0000;
-            regA = ASM_REG_PC;
+            regA = ASM_REG_R0;
             regB = ASM_REG_R0;
             disp = line->o_jmp.literal & 0xFFF;
 
@@ -224,7 +224,7 @@ s_error* handle_branch(s_asm_line* line, s_section* s)
             regA = ASM_REG_R0;
             disp = line->o_jmp.literal & 0xFFF;
 
-            char* bin = translate_to_binary(oc, mod, regA, regB, 0, disp);
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
             return NULL;
@@ -244,7 +244,7 @@ s_error* handle_branch(s_asm_line* line, s_section* s)
         line->section_location = s;
         line->bytes_location = s->next_free;
 
-        char* bin = translate_to_binary(oc, mod, regA, regB, 0, 0);
+        char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
         write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
         return NULL;
@@ -497,7 +497,7 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
             line->section_location = s;
             line->bytes_location = s->next_free;
 
-            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
             free(bin);
@@ -521,6 +521,7 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
             // the literal does not fit in 12bits so we need to use it from the pool
             // using OC=1001, MOD = 0010
             // A <= mem[B + C + D]
+            get_and_set_reference(line->o_ls.symbol);
             add_trampoline_entry(s, line, 0, line->o_ls.symbol, TE_LD_IMM_SYMBOL);
 
             oc = 0b1001;
@@ -551,7 +552,7 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
             line->section_location = s;
             line->bytes_location = s->next_free;
 
-            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+            char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
             write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
             free(bin);

@@ -171,7 +171,7 @@ void check_rela_table(s_rela_table* rela_table)
             continue;
 
         entry->sym_index = section_indx;
-        entry->r_offset = sym->st_value;
+        entry->r_addend += sym->st_value;
     }
 }
 

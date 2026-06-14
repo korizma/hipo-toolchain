@@ -44,8 +44,9 @@ long parse_literal_lex(char* lit);
 
 void yyerror(const char *message);
 
-s_expr new_expr();
+s_expr* new_expr();
 void add_to_expr_literal(s_expr* expr, long literal);
 void add_to_expr_symbol(s_expr* expr, char* symbol, int sign);
+
 
 #endif

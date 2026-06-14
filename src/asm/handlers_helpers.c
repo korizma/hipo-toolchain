@@ -122,18 +122,25 @@ bool expr_is_invalid(s_expr* expr)
 }
 void simplify_equ_expression(s_expr* expr)
 {
+    if (expr->symbol_num == 0)
+        return;
+
     int indx = check_symbol_table(expr->symbol_list[0]);
     s_Elf64_Sym* sym = p.sym_table->symbols[indx];
-    long refer = sym->st_value;
+    long refer = sym->st_value, section_sym_count = 0;
 
     for (int i = 1; i < expr->symbol_num; i++)
     {
         int indx_curr = check_symbol_table(expr->symbol_list[1]);
         sym = p.sym_table->symbols[indx_curr];
 
+        expr->symbol_coeff[0] += expr->symbol_coeff[i];
         expr->value += expr->symbol_coeff[i] * (refer - sym->st_value);
     }
 
-    expr->symbol_num = 1;
+    if (expr->symbol_coeff[0] == 0)
+        expr->symbol_num = 0;
+    else
+        expr->symbol_num = 1;
 }
 

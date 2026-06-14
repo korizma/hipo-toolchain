@@ -135,7 +135,7 @@ typedef struct
 
     // for equ
     char* new_symbol;
-    s_expr expression;
+    s_expr* expression;
 
     // for extern, global
     char** symbol_list;
@@ -148,7 +148,7 @@ typedef struct
     char* ascii_string;
 
     // for skip
-    int byte_num;
+    long byte_num;
     
     // for word
     s_sym_or_lit** sym_or_lit_list;

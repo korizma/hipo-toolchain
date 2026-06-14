@@ -128,14 +128,14 @@ void yyerror(const char *message)
 }
 
 
-s_expr new_expr()
+s_expr* new_expr()
 {
-    s_expr expr;
-    expr.symbol_list = (char**)malloc(EXPR_LIST_START_SIZE * sizeof(char*));
-    expr.symbol_coeff = (int*)malloc(EXPR_LIST_START_SIZE * sizeof(int));
-    expr.symbol_num = 0;
-    expr.lists_size = EXPR_LIST_START_SIZE;
-    expr.value = 0;
+    s_expr* expr = (s_expr*)malloc(sizeof(s_expr));
+    expr->symbol_list = (char**)malloc(EXPR_LIST_START_SIZE * sizeof(char*));
+    expr->symbol_coeff = (int*)malloc(EXPR_LIST_START_SIZE * sizeof(int));
+    expr->symbol_num = 0;
+    expr->lists_size = EXPR_LIST_START_SIZE;
+    expr->value = 0;
     return expr;
 }
 void add_to_expr_literal(s_expr* expr, long literal)

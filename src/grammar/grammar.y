@@ -25,7 +25,7 @@ void yyerror(const char *message);
     s_operand_jmp o_jmp;
     s_operand_ls o_ls;
     s_gpr_pair gprs;
-    s_expr e;
+    s_expr* e;
     s_list_n_sl listn_sl;
     s_list_n_s listn_s;
 }
@@ -204,35 +204,35 @@ sym_lit_list:
 expr:
         LITERAL {
             $$ = new_expr();
-            add_to_expr_literal(&$$, $1);
+            add_to_expr_literal($$, $1);
         }
     |   symbol_name {
             $$ = new_expr();
-            add_to_expr_symbol(&$$, $1, 1);
+            add_to_expr_symbol($$, $1, 1);
         }
     |   expr PLUS LITERAL {
             $$ = $1;
-            add_to_expr_literal(&$$, $3);
+            add_to_expr_literal($$, $3);
         }
     |   expr PLUS symbol_name {
             $$ = $1;
-            add_to_expr_symbol(&$$, $3, 1);
+            add_to_expr_symbol($$, $3, 1);
         }
     |   expr MINUS LITERAL {
             $$ = $1;
-            add_to_expr_literal(&$$, -$3);
+            add_to_expr_literal($$, -$3);
         }
     |   expr MINUS symbol_name {  
             $$ = $1;
-            add_to_expr_symbol(&$$, $3, -1);
+            add_to_expr_symbol($$, $3, -1);
         }
     |   MINUS LITERAL %prec UMINUS {
             $$ = new_expr();
-            add_to_expr_literal(&$$, -$2);
+            add_to_expr_literal($$, -$2);
         }
     |   MINUS symbol_name %prec UMINUS {
             $$ = new_expr();
-            add_to_expr_symbol(&$$, $2, -1);
+            add_to_expr_symbol($$, $2, -1);
         }
     ;
 
