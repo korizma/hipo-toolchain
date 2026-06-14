@@ -95,3 +95,45 @@ bool long_fit_in_12b(long a)
 {
     return a >= -2048 && a <= 2047;
 }
+
+
+bool expr_is_invalid(s_expr* expr)
+{
+    s_section* found = 0;
+    for (int i = 0 ; i < expr->symbol_num; i++)
+    {
+        int indx = get_and_set_reference(expr->symbol_list[i]);
+
+        s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+
+        if (sym->section == 0)
+            continue;
+
+        if (found == 0)
+        {
+            found = sym->section;
+            continue;
+        }
+
+        if (found != sym->section)
+            return true;
+    }
+    return false;
+}
+void simplify_equ_expression(s_expr* expr)
+{
+    int indx = check_symbol_table(expr->symbol_list[0]);
+    s_Elf64_Sym* sym = p.sym_table->symbols[indx];
+    long refer = sym->st_value;
+
+    for (int i = 1; i < expr->symbol_num; i++)
+    {
+        int indx_curr = check_symbol_table(expr->symbol_list[1]);
+        sym = p.sym_table->symbols[indx_curr];
+
+        expr->value += expr->symbol_coeff[i] * (refer - sym->st_value);
+    }
+
+    expr->symbol_num = 1;
+}
+

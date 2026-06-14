@@ -139,7 +139,7 @@ s_error* handle_equ(s_asm_line* line, s_section* s)
     bool invalid = expr_is_invalid(&line->expression);
     if (invalid)
     {
-        return new_error(line, ERR_EXPR_INVALID);
+        return new_symbol_error(line, ERR_EXPR_INVALID, line->new_symbol);
     }
 
     int indx = check_symbol_table(line->new_symbol);

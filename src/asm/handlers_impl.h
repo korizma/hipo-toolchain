@@ -64,5 +64,6 @@ char find_operation_mod(s_asm_line* line);
 bool long_fit_in_12b(long a);
 
 bool expr_is_invalid(s_expr* expr);
+void simplify_equ_expression(s_expr* expr);
 
 #endif

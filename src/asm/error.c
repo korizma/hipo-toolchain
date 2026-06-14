@@ -154,7 +154,10 @@ void print_error(s_error* err)
         printf("Directive .skip has a byte count that is outside the allowed range of 1 to %d bytes!\n", SKIP_BYTE_LIMIT - 1);
         break;
     case ERR_EXPR_INVALID:
-        printf("Directive .equ has an invalid expression!\n");
+        printf("Directive .equ has an invalid expression for symbol %s!\n", err->symbol);
+        break;
+    case ERR_EQU_EXTERN:
+        printf("Directive .equ has an expression for symbol %s that references an extern symbol!\n", err->symbol);
         break;
     }
 

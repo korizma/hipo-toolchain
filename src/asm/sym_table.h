@@ -4,6 +4,8 @@
 #define SYM_TABLE_START_SIZE 10
 #define SYM_TABLE_INCREMENT 10
 
+#include "code.h"
+
 typedef struct s_section s_section;
 
 typedef enum 
@@ -51,6 +53,7 @@ typedef struct {
 
     // for assembly
     e_Elf64_symbol_entry_state state;
+    s_expr* equ_expr;
 } s_Elf64_Sym;
 
 typedef struct 

@@ -1,7 +1,5 @@
 #include "rela_table.h"
 #include "section.h"
-#include "sym_table.h"
-#include "elf.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -45,7 +43,6 @@ static const char* rela_type_name(e_Elf64_reloc_type type)
     case R_HIPO_NONE: return "R_HIPO_NONE";
     case R_HIPO_32: return "R_HIPO_32";
     case R_HIPO_12: return "R_HIPO_12";
-    case R_HIPO_PC12: return "R_HIPO_PC12";
     }
 
     return "R_HIPO_UNKNOWN";
@@ -174,6 +171,70 @@ void check_rela_table(s_rela_table* rela_table)
             continue;
 
         entry->sym_index = section_indx;
-        entry->r_addend = sym->st_value;
+        entry->r_offset = sym->st_value;
+    }
+}
+
+
+void update_const_equ_rela_entries(s_Elf64_Sym* symbol)
+{
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        s_section* section = p.sections[i];
+
+        if (section == 0 || section->rela_table == 0)
+            continue;
+
+        for (int j = 0; j < section->rela_table->entry_num; j++)
+        {
+            s_Elf64_Rela_entry* entry = section->rela_table->entries[j];
+            s_Elf64_Sym* sym = p.sym_table->symbols[entry->sym_index];
+
+            if (sym != symbol)
+                continue;
+
+            long literal = sym->equ_expr->value;
+
+            switch (entry->reloc_type)
+            {
+                case R_HIPO_32:
+                    section->bytes[entry->r_offset] = literal & 0xFF;
+                    section->bytes[entry->r_offset + 1] = (literal >> 8) & 0xFF;
+                    section->bytes[entry->r_offset + 2] = (literal >> 16) & 0xFF;
+                    section->bytes[entry->r_offset + 3] = (literal >> 24) & 0xFF;
+                    break;
+                case R_HIPO_12:
+                    section->bytes[entry->r_offset] &= 0xF0;
+                    section->bytes[entry->r_offset] |= (literal & 0x0F);
+                    section->bytes[entry->r_offset + 1] = (literal >> 4) & 0xFF;
+                    break;
+            }
+
+            free(entry);
+            section->rela_table->entries[j] = 0;
+        }
+    }
+}
+
+void update_all_rela_entries(s_Elf64_Sym* symbol)
+{
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        s_section* section = p.sections[i];
+
+        if (section == 0 || section->rela_table == 0)
+            continue;
+
+        for (int j = 0; j < section->rela_table->entry_num; j++)
+        {
+            s_Elf64_Rela_entry* entry = section->rela_table->entries[j];
+            s_Elf64_Sym* sym = p.sym_table->symbols[entry->sym_index];
+
+            if (sym != symbol)
+                continue;
+
+            entry->r_addend = sym->st_value;
+            entry->sym_index = check_symbol_table(sym->section->name);
+        }
     }
 }

@@ -2,7 +2,7 @@
 #define CODE_H
 
 #include <stdbool.h>
-#include "elf.h"
+#include "section.h"
 
 typedef enum {
     ASM_INSTR_NONE = 0,
@@ -87,8 +87,6 @@ typedef struct
     int symbol_num;     // number of symbols
     int lists_size;
     long value;         // value to be added to the symbols
-
-
 } s_expr;
 
 typedef struct 

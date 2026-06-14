@@ -19,7 +19,8 @@ typedef enum
     ERR_UNRESOLVED_SYMBOL,
     ERR_TRAMPOLINE_DISPLACEMENT_TOO_LARGE,
     ERR_SKIP_BYTE_LIMIT,
-    ERR_EXPR_INVALID
+    ERR_EXPR_INVALID,
+    ERR_EQU_EXTERN
 } e_error_type;
 
 typedef struct s_error
