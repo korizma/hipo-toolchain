@@ -14,4 +14,4 @@ flex -o "$lexer_out" "$lexer"
 
 gcc $c_files -o "$output_file"
 
-./$output_file tests/nivo-b/isr_terminal.s
+./$output_file tests/nivo-c/isr_terminal.s
