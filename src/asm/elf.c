@@ -39,9 +39,10 @@ int find_section_index(char* name)
 }
 
 
-void export_program_to_elf()
+char* export_program_to_elf()
 {
-    
+    char* bytes = (char*)malloc(sizeof(char) * 1024 * 1024); // 1MB for now
+    int size = 0;
 }
 
 static const char* symbol_type_name(e_Elf64_SymbolType type)

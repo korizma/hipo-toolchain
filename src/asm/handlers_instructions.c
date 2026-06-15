@@ -516,54 +516,32 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
     {
         
 
-        if (long_fit_in_12b(line->o_ls.literal))
-        {
-            // the literal does not fit in 12bits so we need to use it from the pool
-            // using OC=1001, MOD = 0010
-            // A <= mem[B + C + D]
-            get_and_set_reference(line->o_ls.symbol);
-            add_trampoline_entry(s, line, 0, line->o_ls.symbol, TE_LD_IMM_SYMBOL);
+        // using OC=1001, MOD = 0010
+        // A <= mem[B + C + D]
+        get_and_set_reference(line->o_ls.symbol);
+        add_trampoline_entry(s, line, 0, line->o_ls.symbol, TE_LD_IMM_SYMBOL);
 
-            oc = 0b1001;
-            mod = 0b0010;
-            regA = line->reg1;
-            regB = ASM_REG_PC;
-            regC = ASM_REG_R0;
+        oc = 0b1001;
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = ASM_REG_PC;
+        regC = ASM_REG_R0;
 
-            line->section_location = s;
-            line->bytes_location = s->next_free;
+        line->section_location = s;
+        line->bytes_location = s->next_free;
 
-            // disp will be edited in trampoline
-            char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
-            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+        // disp will be edited in trampoline
+        char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+        write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
 
-            free(bin);
-        }
-        else
-        {   
-           // reg <= symbol
-            // A <= B + D
-            oc = 0b1001;
-            mod = 0b0001;
-            regA = line->reg1;
-            regB = ASM_REG_R0;
-            disp = line->o_ls.literal & 0xFFF;
-
-            line->section_location = s;
-            line->bytes_location = s->next_free;
-
-            char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);
-            write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
-
-            free(bin);
-        }
+        free(bin);
 
 
         // A <= mem32[B + C + D]
-        // reg <= mem32[literal]
+        // reg <= mem32[symbol]
         mod = 0b0010;
         regA = line->reg1;
-        regB = line->reg1;
+        regB = 0;
         regC = 0;
         disp = 0;
     }
@@ -599,12 +577,37 @@ s_error* handle_ld(s_asm_line* line, s_section* s)
 
         disp = line->o_ls.literal & 0xFFF; 
     }
+    // reg1 <= mem[reg2 +]
     else if (line->o_ls.kind == ASM_OPERAND_LS_REG_INDIRECT_SYMBOL)
     {
-        // symbol is always > 12bits, unless its equ and has deterministic value
-        // equ not implemented
-        // throwing error for now
-        return new_operand_error(line, ERR_UNSUPPORTED_OPERAND, line->o_ls.kind);
+        // using OC=1001, MOD = 0010
+        // A <= mem[B + C + D]
+        get_and_set_reference(line->o_ls.symbol);
+        add_trampoline_entry(s, line, 0, line->o_ls.symbol, TE_LD_IMM_SYMBOL);
+
+        oc = 0b1001;
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = ASM_REG_PC;
+        regC = ASM_REG_R0;
+
+        line->section_location = s;
+        line->bytes_location = s->next_free;
+
+        // disp will be edited in trampoline
+        char* bin = translate_to_binary(oc, mod, regA, regB, regC, 0);
+        write_bytes_to_section(s, bin, INSTRUCTION_BYTE_LEN);
+
+        free(bin);
+
+
+        // A <= mem32[B + C + D]
+        // reg <= mem32[symbol]
+        mod = 0b0010;
+        regA = line->reg1;
+        regB = line->o_ls.reg;
+        regC = 0;
+        disp = 0;
     }
 
     char* bin = translate_to_binary(oc, mod, regA, regB, regC, disp);

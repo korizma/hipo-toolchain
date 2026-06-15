@@ -26,7 +26,7 @@ void init_program();
 
 void add_section_to_program(s_section* s);
 
-void export_program_to_elf();
+char* export_program_to_elf();
 
 void print_program();
 
