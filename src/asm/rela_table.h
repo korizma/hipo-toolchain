@@ -18,16 +18,16 @@ typedef enum
 typedef struct 
 {
     unsigned long r_offset;    // offset in the section to replace
-    int sym_index;    // symbol index in the symbol table
+    unsigned long sym_index;    // symbol index in the symbol table
     e_Elf64_reloc_type reloc_type;  // relocation entry type
-    long r_addend;  // addend field
+    unsigned long r_addend;  // addend field
 } s_Elf64_Rela_entry;
 
 typedef struct s_rela_table
 {
     s_section* section;
     s_Elf64_Rela_entry** entries;
-    int entry_num, size;
+    long entry_num, size;
 } s_rela_table;
 
 void create_rela_table(s_section* s);

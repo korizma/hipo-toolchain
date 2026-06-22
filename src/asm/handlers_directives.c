@@ -14,7 +14,7 @@ s_error* handle_extern(s_asm_line* line, s_section* s)
         {
             return new_symbol_error(line, ERR_INVALID_EXTERN_SYMBOL, line->symbol_list[i]);
         }
-        add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
+        add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
     }
     return NULL;
 }
@@ -37,7 +37,7 @@ s_error* handle_global(s_asm_line* line, s_section* s)
             }
         }
         else
-            add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_GLOBAL);
+            add_to_symbol_table(line->symbol_list[i], 0, STB_GLOBAL, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_GLOBAL);
     }
     return NULL;
 }
@@ -57,7 +57,7 @@ s_error* handle_section(s_asm_line* line, s_section* s)
     s_section* created_section = new_section(line->section_name);
     add_section_to_program(created_section);
     p.curr_section = created_section;
-    add_to_symbol_table(line->section_name, STT_SECTION, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
+    add_to_symbol_table(line->section_name, STT_SECTION, STB_LOCAL, 0, 0, 0, ST_ENTRY_STATE_COMPLETE);
 
     return NULL;
 }
@@ -145,7 +145,7 @@ s_error* handle_equ(s_asm_line* line, s_section* s)
     int indx = check_symbol_table(line->new_symbol);
     if (indx == -1)
     {
-        add_to_symbol_table(line->new_symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, 0, 0, 0, ST_ENTRY_STATE_EQU);
+        add_to_symbol_table(line->new_symbol, STT_NOTYPE, STB_LOCAL, 0, 0, 0, ST_ENTRY_STATE_EQU);
         int indx = check_symbol_table(line->new_symbol);
         p.sym_table->symbols[indx]->equ_expr = line->expression;
     }
@@ -161,7 +161,6 @@ s_error* handle_equ(s_asm_line* line, s_section* s)
             sym->binding = STB_LOCAL;
 
         sym->type = STT_NOTYPE;
-        sym->visibility = STV_DEFAULT;
         sym->state = ST_ENTRY_STATE_EQU;
         sym->equ_expr = line->expression;
     }
@@ -192,7 +191,7 @@ s_error* handle_label(s_asm_line* line, s_section* s)
     int indx = check_symbol_table(line->symbol);
     if (indx == -1)
     {
-        add_to_symbol_table(line->symbol, STT_NOTYPE, STB_LOCAL, STV_DEFAULT, s, s->next_free, 0, ST_ENTRY_STATE_COMPLETE);
+        add_to_symbol_table(line->symbol, STT_NOTYPE, STB_LOCAL, s, s->next_free, 0, ST_ENTRY_STATE_COMPLETE);
     }
     else
     {
@@ -206,7 +205,6 @@ s_error* handle_label(s_asm_line* line, s_section* s)
             sym->binding = STB_LOCAL;
 
         sym->type = STT_NOTYPE;
-        sym->visibility = STV_DEFAULT;
         sym->section = s;
         sym->st_value = s->next_free;
         sym->st_size = 0;

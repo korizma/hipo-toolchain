@@ -25,14 +25,6 @@ typedef enum
     STT_SECTION = 3,
 } e_Elf64_SymbolType;
 
-typedef enum 
-{
-    STV_DEFAULT = 0,
-    STV_INTERNAL = 1,
-    STV_HIDDEN = 2,
-    STV_PROTECTED = 3
-} e_Elf64_SymbolVisibility;
-
 typedef enum
 {
     ST_ENTRY_STATE_EMPTY,
@@ -46,7 +38,6 @@ typedef struct {
     char*    st_name;        // symbol name
     e_Elf64_SymbolType type;
     e_Elf64_SymbolBinding binding;
-    e_Elf64_SymbolVisibility visibility;
     s_section* section;      // s_section index
     long    st_value;        // symbol value/address/offset
     long   st_size;          // symbol size in bytes
@@ -59,16 +50,15 @@ typedef struct {
 typedef struct 
 {
     s_Elf64_Sym** symbols;
-    int symbol_num, size;
+    unsigned long symbol_num, size;
 } s_symbol_table;
 
 void add_to_symbol_table(   char* symbol, 
                             e_Elf64_SymbolType type, 
-                            e_Elf64_SymbolBinding binding, 
-                            e_Elf64_SymbolVisibility visibility, 
+                            e_Elf64_SymbolBinding binding,
                             s_section* section, 
-                            long sym_offset,
-                            long sym_size,
+                            unsigned long sym_offset,
+                            unsigned long sym_size,
                             e_Elf64_symbol_entry_state state
                         );
 

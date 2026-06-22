@@ -7,8 +7,7 @@
 
 void add_to_symbol_table(   char* symbol, 
                             e_Elf64_SymbolType type, 
-                            e_Elf64_SymbolBinding binding, 
-                            e_Elf64_SymbolVisibility visibility, 
+                            e_Elf64_SymbolBinding binding,
                             s_section* section, 
                             long sym_offset,
                             long sym_size,
@@ -24,7 +23,6 @@ void add_to_symbol_table(   char* symbol,
     new_entry->section = section;
     new_entry->binding = binding;
     new_entry->type = type;
-    new_entry->visibility = visibility;
     new_entry->st_size = sym_size;
     new_entry->st_value = sym_offset;
     new_entry->st_name = symbol;
@@ -74,7 +72,7 @@ int get_and_set_reference(char* symbol)
     if (indx == -1)
     {
         // does not exist
-        add_to_symbol_table(symbol, 0, 0, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_REFERENCE);
+        add_to_symbol_table(symbol, 0, 0, 0, 0, 0, ST_ENTRY_STATE_PARTIAL_REFERENCE);
         indx = p.sym_table->symbol_num - 1;
     }
     
