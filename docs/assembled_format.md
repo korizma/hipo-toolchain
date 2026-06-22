@@ -35,7 +35,7 @@ Next are the strings which can be any size and are NULL terminated.
 
 First 8 bytes describe the number of entries in the Symbol table.
 
-Then are N entries in the symbol table. Size of one entry is 32 bytes.
+Then are N entries in the symbol table. Size of one entry is 40 bytes.
 This is what an entry looks like
 
 ```text
@@ -68,9 +68,9 @@ After the header the next X bytes are the content of the section.
 
 ## Rela table
 
-First 4 bytes describe the number of entries in the rela table.
+First 8 bytes describe the number of entries in the rela table.
 
-After the 4 bytes are the entries.
+After the 8 bytes are the entries.
 The size of an entry is 28 bytes.
 
 This is what an entry looks like.

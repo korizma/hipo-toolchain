@@ -2,6 +2,7 @@
 #include "section.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "elf.h"
 
 extern s_program p;
 
@@ -236,5 +237,52 @@ void update_all_rela_entries(s_Elf64_Sym* symbol)
             entry->r_addend = sym->st_value;
             entry->sym_index = check_symbol_table(sym->section->name);
         }
+    }
+}
+
+// offset in the section to replace - 8 bytes unsigned
+// index of the symbol in the symbol table - 8 bytes unsigned
+// relocation type - 4 bytes
+// the addend - 8 bytes signed
+char* rela_entry_to_bytes(s_Elf64_Rela_entry* entry)
+{
+    char* offset_bytes = long_to_8_bytes(entry->r_offset);
+    char* index_sym_table_bytes = long_to_8_bytes(entry->sym_index);
+    char* rela_type_bytes = int_to_4_bytes(entry->reloc_type);
+    char* addend_bytes = long_to_8_bytes(entry->r_addend);
+
+    char* bytes = (char*)malloc(28);
+    for (int i = 0; i < 8; i++)
+    {
+        bytes[i] = offset_bytes[i];
+        bytes[i + 8] = index_sym_table_bytes[i];
+        bytes[i + 20] = addend_bytes[i];
+    }
+    for (int i = 0; i < 4; i++)
+    {
+        bytes[i + 16] = rela_type_bytes[i];
+    }
+
+    free(offset_bytes);
+    free(index_sym_table_bytes);
+    free(rela_type_bytes);
+    free(addend_bytes);
+
+    return bytes;
+}
+
+
+void export_rela_table_to_byte_array(s_rela_table* rela_table, s_final_output* output)
+{
+    char* entry_num_bytes = long_to_8_bytes(rela_table->entry_num);
+
+    write_n_bytes_final_output(output, entry_num_bytes, 8);
+    free(entry_num_bytes);
+    
+    for (int i = 0; i < rela_table->entry_num; i++)
+    {
+        char* bytes = rela_entry_to_bytes(rela_table->entries[i]);
+        write_n_bytes_final_output(output, bytes, 28);
+        free(bytes);
     }
 }

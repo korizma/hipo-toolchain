@@ -5,6 +5,8 @@
 #define SECTION_INCREMENT_SIZE 16
 
 typedef struct s_rela_table s_rela_table;
+typedef struct s_final_output s_final_output;
+
 
 typedef struct s_section
 {
@@ -21,5 +23,9 @@ void write_bytes_to_section(s_section* s, char* bytes, int num);
 void skip_bytes_in_section(s_section* s, int num);
 
 void print_section(s_section* section);
+
+long section_index_in_program(s_section* section);
+
+void export_section_to_byte_array(s_section* section, s_final_output* output);
 
 #endif

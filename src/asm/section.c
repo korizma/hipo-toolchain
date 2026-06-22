@@ -1,7 +1,10 @@
 #include "section.h"
+#include "elf.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+extern s_program p;
 
 s_section* new_section(char* name)
 {
@@ -74,3 +77,41 @@ void print_section(s_section* section)
     }
 
 }
+
+// the index of the sections name in the string table - 8 bytes
+// size of the section - 8 bytes
+// flag if the section has a rela table - 1 byte (0x00 means no rela table, 0x01 means it has a rela table)
+void export_section_to_byte_array(s_section* section, s_final_output* output)
+{
+    long index_sec_name = add_and_get_string_string_table(output, section->name);
+    
+    char* index_sec_name_buffer = long_to_8_bytes(index_sec_name);
+    char* section_size_buffer = long_to_8_bytes(section->next_free);
+    char  rela_flag = section->rela_table != 0;
+
+    write_n_bytes_final_output(output, index_sec_name_buffer, 8);
+    write_n_bytes_final_output(output, section_size_buffer, 8);
+    write_n_bytes_final_output(output, &rela_flag, 1);
+
+    free(index_sec_name_buffer);
+    free(section_size_buffer);
+
+    write_n_bytes_final_output(output, section->bytes, section->next_free);
+
+    if (section->rela_table != 0)
+    {
+        export_rela_table_to_byte_array(section->rela_table, output);
+    }
+}
+
+
+long section_index_in_program(s_section* section)
+{
+    for (int i = 0; i < p.number_of_sections; i++)
+    {
+        if (p.sections[i] == section)
+            return i;
+    }
+    return -1;
+}
+

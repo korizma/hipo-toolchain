@@ -9,7 +9,7 @@
 #define PROGRAM_START_SECTION_SIZE 10
 #define PROGRAM_SECTION_INCREMENT 10
 
-typedef struct
+typedef struct s_program
 {
     s_section** sections, *curr_section;
     int number_of_sections, section_arr_size;
@@ -30,15 +30,28 @@ void print_program();
 
 typedef struct 
 {
-    char* bytes;
-    int num_written, size;
-} s_elf_final;
-
-typedef struct 
-{
     long string_num, size;
     char** strings;
 } s_string_table;
 
+typedef struct s_final_output
+{
+    long pos, size;
+    char* bytes;
+
+    s_string_table str_table;
+} s_final_output;
+
+void add_string_to_string_table(s_final_output* output, char* string);
+
+long get_index_of_string_in_string_table(s_final_output* output, char* string);
+
+long add_and_get_string_string_table(s_final_output* output, char* string);
+
+void write_n_bytes_final_output(s_final_output* output, char* bytes, int n);
+
+// needs to free after
+char* long_to_8_bytes(long x);
+char* int_to_4_bytes(int x);
 
 #endif

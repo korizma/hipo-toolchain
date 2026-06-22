@@ -9,8 +9,8 @@ void add_to_symbol_table(   char* symbol,
                             e_Elf64_SymbolType type, 
                             e_Elf64_SymbolBinding binding,
                             s_section* section, 
-                            long sym_offset,
-                            long sym_size,
+                            unsigned long sym_offset,
+                            unsigned long sym_size,
                             e_Elf64_symbol_entry_state state
                             )
 {
@@ -154,3 +154,63 @@ s_error* finalize_symbol_table()
     }
     return NULL;
 }
+
+
+void export_sym_table_to_byte_array(s_final_output* output)
+{
+    char* entry_num_bytes = long_to_8_bytes(p.sym_table->symbol_num);
+
+    write_n_bytes_final_output(output, entry_num_bytes, 8);
+    free(entry_num_bytes);
+
+    for (int i = 0; i < p.sym_table->symbol_num; i++)
+    {
+        char* bytes = sym_entry_to_bytes(p.sym_table->symbols[i], output);
+        write_n_bytes_final_output(output, bytes, 40);
+        free(bytes);
+    }
+}
+
+// index of the symbol in the string table - 8 bytes unsigned
+// symbol type - 4 bytes
+// symbol binding - 4 bytes
+// index of the section that the symbol belongs - 8 bytes unsigned
+// symbol offset - 8 bytes unsigned
+// symbol value - 8 bytes signed
+char* sym_entry_to_bytes(s_Elf64_Sym* entry, s_final_output* output)
+{
+    long index_sym_name = add_and_get_string_string_table(output, entry->st_name);
+    long index_section = section_index_in_program(entry->section);
+
+    char* index_sym_name_bytes = long_to_8_bytes(index_sym_name);
+    char* type_bytes = int_to_4_bytes(entry->type);
+    char* binding_bytes = int_to_4_bytes(entry->binding);
+    char* index_section_bytes = long_to_8_bytes(index_section);
+    char* offset_bytes = long_to_8_bytes(entry->st_value);
+    char* value_bytes = long_to_8_bytes(entry->st_size);
+
+    char* bytes = (char*)malloc(40);
+    for (int i = 0; i < 8; i++)
+    {
+        bytes[i] = index_sym_name_bytes[i];
+        bytes[i + 16] = index_section_bytes[i];
+        bytes[i + 24] = offset_bytes[i];
+        bytes[i + 32] = value_bytes[i];
+    }
+
+    for (int i = 0; i < 4; i++)
+    {
+        bytes[i + 8] = type_bytes[i];
+        bytes[i + 12] = binding_bytes[i];
+    }
+
+    free(index_sym_name_bytes);
+    free(type_bytes);
+    free(binding_bytes);
+    free(index_section_bytes);
+    free(offset_bytes);
+    free(value_bytes);
+
+    return bytes;
+}
+

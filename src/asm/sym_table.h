@@ -8,6 +8,8 @@
 
 typedef struct s_section s_section;
 
+typedef struct s_final_output s_final_output;
+
 typedef enum 
 {
     STB_LOCAL = 0,
@@ -75,5 +77,9 @@ void update_section_size_in_sym_table(s_section* s);
 
 // returns an error if there are symbols that are referenced but not inited
 struct s_error* finalize_symbol_table();
+
+void export_sym_table_to_byte_array(s_final_output* output);
+
+char* sym_entry_to_bytes(s_Elf64_Sym* entry, s_final_output* output);
 
 #endif

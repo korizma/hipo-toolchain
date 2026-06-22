@@ -4,7 +4,7 @@
 #define RELA_TABLE_START_SIZE 10
 #define RELA_TABLE_INCREMENT 10
 
-#include "elf.h"
+#include "sym_table.h"
 
 typedef struct s_section s_section;
 
@@ -47,5 +47,10 @@ void check_rela_table(s_rela_table* rela_table);
 void update_const_equ_rela_entries(s_Elf64_Sym* symbol);
 
 void update_all_rela_entries(s_Elf64_Sym* symbol);
+
+
+void export_rela_table_to_byte_array(s_rela_table* rela_table, s_final_output* output);
+
+char* rela_entry_to_bytes(s_Elf64_Rela_entry* entry);
 
 #endif
