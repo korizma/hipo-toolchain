@@ -28,7 +28,7 @@ void add_section_to_program(s_section* s)
     p.sections[p.number_of_sections++] = s;
 }
 
-void export_program_to_elf(const char* filename)
+void export_program_to_binary(const char* filename)
 {
     s_final_output output;
     output.pos = 0;
@@ -46,6 +46,27 @@ void export_program_to_elf(const char* filename)
     }
 
     // now just open the file and write the string table first and then write the bytes of output
+    FILE* file = fopen(filename, "wb");
+
+    if (file == NULL)
+    {
+        printf("Error opening file %s for writing\n", filename);
+        return;
+    }
+
+    char* string_table_size_bytes = long_to_8_bytes(output.str_table.string_num);
+    fwrite(string_table_size_bytes, 1, 8, file);
+
+    for (int i = 0; i < output.str_table.string_num; i++)
+    {
+        char* string_bytes = output.str_table.strings[i];
+        long string_size = strlen(string_bytes) + 1;
+
+        fwrite(string_bytes, 1, string_size, file);
+    }
+
+    fwrite(output.bytes, 1, output.pos, file);
+    fclose(file);
 }
 
 
@@ -121,92 +142,7 @@ char* int_to_4_bytes(int x)
     return bytes;
 }
 
-
-
-
-static const char* symbol_type_name(e_Elf64_SymbolType type)
+void export_program_to_text(const char* filename)
 {
-    switch (type)
-    {
-    case STT_NOTYPE: return "NOTYPE";
-    case STT_SECTION: return "SECTION";
-    }
-
-    return "UNKNOWN";
-}
-
-static const char* symbol_binding_name(e_Elf64_SymbolBinding binding)
-{
-    switch (binding)
-    {
-    case STB_LOCAL: return "LOCAL";
-    case STB_GLOBAL: return "GLOBAL";
-    case STB_WEAK: return "WEAK";
-    case STB_LOOS: return "LOOS";
-    case STB_HIOS: return "HIOS";
-    case STB_LOPROC: return "LOPROC";
-    case STB_HIPROC: return "HIPROC";
-    }
-
-    return "UNKNOWN";
-}
-
-static const char* symbol_state_name(e_Elf64_symbol_entry_state state)
-{
-    switch (state)
-    {
-    case ST_ENTRY_STATE_EMPTY: return "EMPTY";
-    case ST_ENTRY_STATE_PARTIAL_GLOBAL: return "PARTIAL_GLOBAL";
-    case ST_ENTRY_STATE_PARTIAL_REFERENCE: return "PARTIAL_REFERENCE";
-    case ST_ENTRY_STATE_COMPLETE: return "COMPLETE";
-    }
-
-    return "UNKNOWN";
-}
-
-void print_program()
-{
-    printf("Program: sections=%d, section_capacity=%d, symbols=%d\n",
-           p.number_of_sections,
-           p.section_arr_size,
-           p.sym_table != 0 ? p.sym_table->symbol_num : 0);
-
-    printf("\nSections:\n");
-    for (int i = 0; i < p.number_of_sections; i++)
-    {
-        print_section(p.sections[i]);
-    }
-
-    print_all_rela_tables();
-
-    printf("\nSymbol table:\n");
-    if (p.sym_table == 0)
-    {
-        printf("  <none>\n");
-        return;
-    }
-
-    printf("  %-5s %-20s %-8s %-8s %-16s %-8s %-8s %s\n",
-           "Index", "Name", "Type", "Bind", "Section", "Value", "Size", "State");
-
-    for (int i = 0; i < p.sym_table->symbol_num; i++)
-    {
-        s_Elf64_Sym* symbol = p.sym_table->symbols[i];
-
-        if (symbol == 0)
-        {
-            printf("  %-5d <null symbol>\n", i);
-            continue;
-        }
-
-        printf("  %-5d %-20s %-8s %-8s %-16s %-8ld %-8ld %s\n",
-               i,
-               symbol->st_name != 0 ? symbol->st_name : "<none>",
-               symbol_type_name(symbol->type),
-               symbol_binding_name(symbol->binding),
-               symbol->section != 0 ? symbol->section->name : "<none>",
-               symbol->st_value,
-               symbol->st_size,
-               symbol_state_name(symbol->state));
-    }
+    
 }
