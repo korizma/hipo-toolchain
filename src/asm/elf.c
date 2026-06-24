@@ -3,6 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+extern char* program_to_string(s_program *program);
+
 s_program p;
 
 void init_program()
@@ -144,5 +146,16 @@ char* int_to_4_bytes(int x)
 
 void export_program_to_text(const char* filename)
 {
-    
+    char* program_string = program_to_string(&p);
+
+    FILE* file = fopen(filename, "wb");
+
+    if (file == NULL)
+    {
+        printf("Error opening file %s for writing\n", filename);
+        return;
+    }
+
+    fwrite(program_string, 1, strlen(program_string), file);
+    fclose(file);
 }

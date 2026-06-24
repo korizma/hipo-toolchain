@@ -62,8 +62,8 @@ void assemble_file(const char* filename)
         check_rela_table(p.sections[i]->rela_table);
     }
 
-    print_program();
-    print_trampoline();
+    export_program_to_binary("output.bin");
+    export_program_to_text("output.txt");
 
 
     free_trampoline();

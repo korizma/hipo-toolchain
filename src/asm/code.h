@@ -163,11 +163,18 @@ typedef struct
 
 } s_asm_line;
 
-const char* asm_instruction_name(e_asm_instruction instruction);
-const char* asm_directive_name(e_asm_directive directive);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+char* asm_instruction_name(e_asm_instruction instruction);
+char* asm_directive_name(e_asm_directive directive);
 
 // Caller owns the returned string and must free it.
 char* asm_line_to_string(s_asm_line* line);
 
+#ifdef __cplusplus
+}
+#endif
 
 #endif

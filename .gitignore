@@ -4,3 +4,4 @@ src/grammar/lex.yy.c
 .codex
 .agents
 ss
+bin/

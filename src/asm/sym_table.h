@@ -55,6 +55,10 @@ typedef struct
     unsigned long symbol_num, size;
 } s_symbol_table;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 void add_to_symbol_table(   char* symbol, 
                             e_Elf64_SymbolType type, 
                             e_Elf64_SymbolBinding binding,
@@ -81,5 +85,9 @@ struct s_error* finalize_symbol_table();
 void export_sym_table_to_byte_array(s_final_output* output);
 
 char* sym_entry_to_bytes(s_Elf64_Sym* entry, s_final_output* output);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

@@ -18,6 +18,10 @@ typedef struct s_program
     bool has_ended;
 } s_program;
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern s_program p;
 
 void init_program();
@@ -55,5 +59,9 @@ void write_n_bytes_final_output(s_final_output* output, char* bytes, int n);
 // needs to free after
 char* long_to_8_bytes(long x);
 char* int_to_4_bytes(int x);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
