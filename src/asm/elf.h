@@ -30,6 +30,8 @@ void add_section_to_program(s_section* s);
 
 void export_program_to_binary(const char* filename);
 
+s_program* import_program_from_binary(const char* filename);
+
 void export_program_to_text(const char* filename);
 
 void print_program();
