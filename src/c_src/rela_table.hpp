@@ -33,7 +33,7 @@ s_rela_table* new_rela_table(s_section* section);
 s_rela_table* get_rela_table(s_section* section);
 
 // creates a new entry for in the rela table for the given section, if the rela table doesnt exists it creates it 
-s_rela_table_entry* create_new_rela_table_entry(s_section* section, long addend, long offset, char relocation_type);
+s_rela_table_entry* create_new_rela_table_entry(s_section* section, long addend, long offset, char relocation_type, long symbol_index);
 
 // returns the string representation of the rela table, used for the output text file
 string rela_table_to_string(s_rela_table* rela_table);

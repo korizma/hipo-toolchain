@@ -36,5 +36,8 @@ void bind_rela_table_to_section(s_section* section, s_rela_table* rela_table);
 // returns the string view of the section, used for final text file export
 string section_to_string(s_section* section);
 
+// returns the section offset
+long get_section_offset(s_section* section);
+
 // signature not final yet
 s_section* import_section(int i_dont_know_yet);

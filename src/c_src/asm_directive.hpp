@@ -28,7 +28,7 @@ typedef struct s_sym_lit
 {
     char type;
     string symbol;
-    long literal;
+    int literal;
 } s_sym_lit;
 
 typedef struct s_asm_directive

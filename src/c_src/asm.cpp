@@ -22,6 +22,7 @@ s_program* get_program()
 void init_program()
 {
     program.symbol_table = (s_symbol_table*)malloc(sizeof(s_symbol_table));
+    program.trampoline = (s_trampoline*)malloc(sizeof(s_trampoline));
 }
 
 void add_instruction_to_program(s_asm_instruction* instruction)
@@ -130,4 +131,63 @@ string program_to_string()
     }
 
     return program_string;
+}
+
+
+s_symbol_table* get_symbol_table()
+{
+    return program.symbol_table;
+}
+
+s_trampoline* get_trampoline()
+{
+    return program.trampoline;
+}
+
+s_section* get_current_section()
+{
+    if (program.section_list.empty())
+        return NULL;
+    return &program.section_list.back();
+}
+
+s_error handle_label(s_asm_line* line)
+{
+    s_section* curr_section = get_current_section();
+    if (curr_section == NULL)
+        return new_error(ERR_LINE_OUTSIDE_SECTION, asm_line_to_string(line));
+
+    s_symbol_table_entry* symbol = get_symbol_entry_symbol(line->label);
+
+    if (symbol != 0 && (symbol->state == STS_COMPLETE || symbol->state == STS_EQU))
+        return new_error(ERR_DOUBLE_SYM_DECL, line->label);
+
+    if (symbol != 0)
+    {
+        symbol->offset_or_value = curr_section->bytes.size();
+        symbol->size = 0;
+        symbol->type = STT_NOTYPE;
+        symbol->state = STS_COMPLETE;
+        symbol->section_symbol_table_index = curr_section->sym_table_index;
+        if (symbol->binding != STB_GLOBAL)
+            symbol->binding = STB_LOCAL;
+    }
+    else
+    {
+        symbol = create_new_symbol_entry(line->label);
+        symbol->offset_or_value = curr_section->bytes.size();
+        symbol->size = 0;
+        symbol->type = STT_NOTYPE;
+        symbol->state = STS_COMPLETE;
+        symbol->binding = STB_LOCAL;
+        symbol->section_symbol_table_index = curr_section->sym_table_index;
+    }
+
+    return new_no_error();
+}
+
+void free_program()
+{
+    free(program.trampoline);
+    free(program.symbol_table);
 }

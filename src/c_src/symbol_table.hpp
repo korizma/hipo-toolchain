@@ -9,18 +9,18 @@ struct s_expr;
 struct s_error;
 
 // symbol table types
-#define STT_SECTION 0
-#define STT_NOTYPE  1
+#define STT_SECTION 1
+#define STT_NOTYPE  2
 
 // symbol table bindings
-#define STB_LOCAL 0
-#define STB_GLOBAL 1
+#define STB_LOCAL 1
+#define STB_GLOBAL 2
 
 // symbol table state
-#define STS_COMPLETE 0
-#define STS_REFERENCE 1
-#define STS_GLOBAL_REFERENCE 2
-#define STS_EQU 3
+#define STS_COMPLETE 1
+#define STS_REFERENCE 2
+#define STS_GLOBAL_REFERENCE 3
+#define STS_EQU 4
 
 typedef struct s_symbol_table_entry
 {
@@ -68,3 +68,5 @@ s_symbol_table* import_symbol_table(int i_dont_know_yet);
 // finalizes each equ symbol, and looks for undefined symbols
 vector<s_error> finalize_symbol_table();
 
+// returns the index of the symbol, if not found returns -1
+long get_symbol_entry_index_by_symbol(string symbol);
