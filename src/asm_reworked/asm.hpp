@@ -21,6 +21,9 @@ typedef struct s_asm_line
     s_asm_instruction* instruction;
     s_asm_directive* directive;
     string label;
+
+    // debug
+    long line_number;
 } s_asm_line;
 
 typedef struct s_program
@@ -56,6 +59,9 @@ void add_instruction_to_program(s_asm_instruction* instruction);
 void add_directive_to_program(s_asm_directive* directive);
 // adds a label declaration to the lines
 void add_label_to_program(string label);
+
+// returns the assembly line as string
+string asm_line_to_string(s_asm_line* line);
 
 // assembles the program and outputs to the mentioned filename
 bool assemble_program_to_file(string filename);

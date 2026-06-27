@@ -30,10 +30,14 @@ typedef struct s_trampoline
     vector<s_trampoline_entry> entries;
 } s_trampoline;
 
+//  adds a literal trampoline entry for the described section
 void add_literal_trampline_entry(s_section* section, long section_offset, long referent_offset, long literal);
 
+// adds a symbol trampoline entry for the described section
 void add_symbol_trampline_entry(s_section* section, long section_offset, long referent_offset, string symbol);
 
+// writes one trampoline entry, returns an error msg
 string write_trampoline_entry(s_trampoline_entry* entry);
 
-string write_trampolines();
+// writes all of the trampoline entries, returns all error msgs
+vector<string> write_trampolines();
