@@ -4,6 +4,7 @@
 #include <vector>
 
 struct s_section;
+struct s_error;
 
 using namespace std;
 
@@ -37,7 +38,7 @@ void add_literal_trampline_entry(s_section* section, long section_offset, long r
 void add_symbol_trampline_entry(s_section* section, long section_offset, long referent_offset, string symbol);
 
 // writes one trampoline entry, returns an error msg
-string write_trampoline_entry(s_trampoline_entry* entry);
+s_error write_trampoline_entry(s_trampoline_entry* entry);
 
 // writes all of the trampoline entries, returns all error msgs
-vector<string> write_trampolines();
+vector<s_error> write_trampolines();

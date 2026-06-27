@@ -10,6 +10,7 @@ struct s_symbol_table;
 struct s_asm_instruction;
 struct s_asm_directive;
 struct s_trampoline;
+struct s_error;
 
 #define ASM_INSTRUCTION 0
 #define ASM_DIRECTIVE 1
@@ -70,7 +71,7 @@ bool assemble_lines();
 
 
 // handler for asm lines labels
-string handle_label(s_asm_line* line);
+s_error handle_label(s_asm_line* line);
 
 
 // adds a section to a program
@@ -85,3 +86,5 @@ vector<s_asm_line> get_program_lines();
 s_symbol_table* get_symbol_table();
 // returns the trampoline entries
 s_trampoline* get_trampoline();
+// returns the current section
+s_section* get_current_section();

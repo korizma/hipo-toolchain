@@ -7,6 +7,8 @@
 #include <iostream>
 #include <fstream>
 #include "rela_table.hpp"
+#include "error.hpp"
+#include "trampoline.hpp"
 
 using namespace std;
 
@@ -78,7 +80,7 @@ bool assemble_lines()
     bool has_errors = false;
     for (s_asm_line line : lines)
     {
-        string error;
+        s_error error;
         if (line.asm_type == ASM_LABEL)
             error = handle_label(&line);
 
@@ -88,11 +90,27 @@ bool assemble_lines()
         else if (line.asm_type == ASM_DIRECTIVE)
             error = handle_asm_directive(line.directive);
 
-        if (error != "")
+        if (error.no_error)
         {
             has_errors = true;
-            cout << error << endl;
+            cout << error_to_string(error) << endl;
         }
+    }
+
+    vector<s_error> symbol_table_errors = finalize_symbol_table();
+
+    for (s_error error : symbol_table_errors)
+    {
+        has_errors = true;
+        cout << error_to_string(error) << endl;
+    }
+
+    vector<s_error> trampoline_errors = write_trampolines();
+
+    for (s_error error : trampoline_errors)
+    {
+        has_errors = true;
+        cout << error_to_string(error) << endl;
     }
 
     return !has_errors;

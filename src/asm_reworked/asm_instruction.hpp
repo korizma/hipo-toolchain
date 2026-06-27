@@ -5,6 +5,8 @@
 
 using namespace std;
 
+struct s_error;
+
 enum 
 {
     ASM_OP_JMP_NONE = 0,
@@ -103,44 +105,44 @@ typedef struct s_asm_instruction
 s_asm_instruction* new_asm_instruction();
 
 // forwards the instruction to the correct handler
-string handle_asm_instruction(s_asm_instruction* instruction);
+s_error handle_asm_instruction(s_asm_instruction* instruction);
 
 // returns the instruction as a string
 string asm_instruction_to_string(s_asm_instruction* instruction);
 
-string handle_halt(s_asm_instruction* instruction);
-string handle_int(s_asm_instruction* instruction);
-string handle_iret(s_asm_instruction* instruction);
+s_error handle_halt(s_asm_instruction* instruction);
+s_error handle_int(s_asm_instruction* instruction);
+s_error handle_iret(s_asm_instruction* instruction);
 
-string handle_call(s_asm_instruction* instruction);
-string handle_ret(s_asm_instruction* instruction);
-string handle_push(s_asm_instruction* instruction);
-string handle_pop(s_asm_instruction* instruction);
+s_error handle_call(s_asm_instruction* instruction);
+s_error handle_ret(s_asm_instruction* instruction);
+s_error handle_push(s_asm_instruction* instruction);
+s_error handle_pop(s_asm_instruction* instruction);
 
 
-string handle_jmp(s_asm_instruction* instruction);
-string handle_beq(s_asm_instruction* instruction);
-string handle_bne(s_asm_instruction* instruction);
-string handle_bgt(s_asm_instruction* instruction);
+s_error handle_jmp(s_asm_instruction* instruction);
+s_error handle_beq(s_asm_instruction* instruction);
+s_error handle_bne(s_asm_instruction* instruction);
+s_error handle_bgt(s_asm_instruction* instruction);
 
-string handle_xchg(s_asm_instruction* instruction);
+s_error handle_xchg(s_asm_instruction* instruction);
 
-string handle_add(s_asm_instruction* instruction);
-string handle_sub(s_asm_instruction* instruction);
-string handle_mul(s_asm_instruction* instruction);
-string handle_div(s_asm_instruction* instruction);
+s_error handle_add(s_asm_instruction* instruction);
+s_error handle_sub(s_asm_instruction* instruction);
+s_error handle_mul(s_asm_instruction* instruction);
+s_error handle_div(s_asm_instruction* instruction);
 
-string handle_not(s_asm_instruction* instruction);
+s_error handle_not(s_asm_instruction* instruction);
 
-string handle_and(s_asm_instruction* instruction);
-string handle_or(s_asm_instruction* instruction);
-string handle_xor(s_asm_instruction* instruction);
-string handle_shl(s_asm_instruction* instruction);
-string handle_shr(s_asm_instruction* instruction);
+s_error handle_and(s_asm_instruction* instruction);
+s_error handle_or(s_asm_instruction* instruction);
+s_error handle_xor(s_asm_instruction* instruction);
+s_error handle_shl(s_asm_instruction* instruction);
+s_error handle_shr(s_asm_instruction* instruction);
 
-string handle_ld(s_asm_instruction* instruction);
+s_error handle_ld(s_asm_instruction* instruction);
 
-string handle_st(s_asm_instruction* instruction);
+s_error handle_st(s_asm_instruction* instruction);
 
-string handle_csrrd(s_asm_instruction* instruction);
-string handle_csrwr(s_asm_instruction* instruction);
+s_error handle_csrrd(s_asm_instruction* instruction);
+s_error handle_csrwr(s_asm_instruction* instruction);

@@ -6,6 +6,7 @@
 using namespace std;
 
 struct s_expr;
+struct s_error;
 
 // symbol table types
 #define STT_SECTION 0
@@ -63,4 +64,7 @@ string symbol_table_to_string();
 
 // signature not final yet
 s_symbol_table* import_symbol_table(int i_dont_know_yet);
+
+// finalizes each equ symbol, and looks for undefined symbols
+vector<s_error> finalize_symbol_table();
 

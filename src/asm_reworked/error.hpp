@@ -18,13 +18,18 @@ typedef struct s_error
 {
     char type;
     string additional_info;
+
+    bool no_error;
 } s_error;
 
 // allocates a new error with the type and info
-s_error* new_error(char type, string info = "");
+s_error new_error(char type, string info = "");
+
+// allocates a new error with the type and info
+s_error new_no_error();
 
 // returns a string representation of the error
-string error_to_string(s_error* error);
+string error_to_string(s_error error);
 
 // returns the error message for the given type
 string error_type_message(char type);
