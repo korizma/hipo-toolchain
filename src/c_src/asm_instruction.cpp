@@ -17,7 +17,6 @@ s_error handle_asm_instruction(s_asm_instruction* instruction)
         return new_error(ERR_LINE_OUTSIDE_SECTION);
 
     s_error err;
-#include "error.hpp"
     switch (instruction->instruction)
     {
     case ASM_INSTR_HALT:
@@ -106,7 +105,7 @@ s_error handle_asm_instruction(s_asm_instruction* instruction)
     return err;
 }
 
-string asm_instruction_to_string(s_asm_instruction* instruction)\
+string asm_instruction_to_string(s_asm_instruction* instruction)
 {
     return "";
 }
@@ -127,6 +126,7 @@ s_error handle_halt(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_int(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -143,6 +143,7 @@ s_error handle_int(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_iret(s_asm_instruction* instruction)
 {
     // iret <=> pop status, pop pc
@@ -173,7 +174,6 @@ s_error handle_iret(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_call(s_asm_instruction* instruction); // for later
 s_error handle_ret(s_asm_instruction* instruction)
 {
     // ret <=> pop pc
@@ -192,6 +192,7 @@ s_error handle_ret(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_push(s_asm_instruction* instruction)
 {
     // push reg <=> sp = sp - 4, mem[sp] <= reg
@@ -220,6 +221,7 @@ s_error handle_push(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_pop(s_asm_instruction* instruction)
 {
     // pop reg <=> reg <= mem[SP], SP = SP + 4
@@ -238,12 +240,6 @@ s_error handle_pop(s_asm_instruction* instruction)
 
     return new_no_error();
 }
-
-
-s_error handle_jmp(s_asm_instruction* instruction);
-s_error handle_beq(s_asm_instruction* instruction);
-s_error handle_bne(s_asm_instruction* instruction);
-s_error handle_bgt(s_asm_instruction* instruction);
 
 s_error handle_xchg(s_asm_instruction* instruction)
 {
@@ -278,6 +274,7 @@ s_error handle_add(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_sub(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -294,6 +291,7 @@ s_error handle_sub(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_mul(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -310,6 +308,7 @@ s_error handle_mul(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_div(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -360,6 +359,7 @@ s_error handle_and(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_or(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -376,6 +376,7 @@ s_error handle_or(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_xor(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -392,6 +393,7 @@ s_error handle_xor(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_shl(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -408,6 +410,7 @@ s_error handle_shl(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_shr(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -425,10 +428,6 @@ s_error handle_shr(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_ld(s_asm_instruction* instruction);
-
-s_error handle_st(s_asm_instruction* instruction);
-
 s_error handle_csrrd(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -445,6 +444,7 @@ s_error handle_csrrd(s_asm_instruction* instruction)
 
     return new_no_error();
 }
+
 s_error handle_csrwr(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();

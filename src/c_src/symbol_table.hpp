@@ -22,6 +22,12 @@ struct s_error;
 #define STS_GLOBAL_REFERENCE 3
 #define STS_EQU 4
 
+typedef struct s_mem_reg_sym
+{
+    s_section* section;
+    long offset;
+};
+
 typedef struct s_symbol_table_entry
 {
     string name;
@@ -36,6 +42,10 @@ typedef struct s_symbol_table_entry
 
     // equ specific field
     s_expr* expression;
+
+    // for memory register symbol store operation
+    vector<s_mem_reg_sym> mem_reg_sym_list;
+
 } s_symbol_table_entry;
 
 
@@ -70,3 +80,5 @@ vector<s_error> finalize_symbol_table();
 
 // returns the index of the symbol, if not found returns -1
 long get_symbol_entry_index_by_symbol(string symbol);
+
+void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset);

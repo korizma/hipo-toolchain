@@ -73,3 +73,12 @@ vector<char> symbol_table_entry_to_bytes(s_symbol_table_entry entry);
 string symbol_table_to_string();
 
 vector<s_error> finalize_symbol_table();
+
+
+void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset)
+{
+    s_mem_reg_sym new_mem_reg_sym;
+    new_mem_reg_sym.section = section;
+    new_mem_reg_sym.offset = offset;
+    symbol->mem_reg_sym_list.push_back(new_mem_reg_sym);
+}

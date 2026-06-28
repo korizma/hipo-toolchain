@@ -32,10 +32,10 @@ typedef struct s_trampoline
 } s_trampoline;
 
 //  adds a literal trampoline entry for the described section
-void add_literal_trampline_entry(s_section* section, long section_offset, long referent_offset, long literal);
+void add_literal_trampoline_entry(s_section* section, long section_offset, long referent_offset, long literal);
 
 // adds a symbol trampoline entry for the described section
-void add_symbol_trampline_entry(s_section* section, long section_offset, long referent_offset, string symbol);
+void add_symbol_trampoline_entry(s_section* section, long section_offset, long referent_offset, long symbol_index);
 
 // writes one trampoline entry, returns an error msg
 s_error write_trampoline_entry(s_trampoline_entry* entry);
