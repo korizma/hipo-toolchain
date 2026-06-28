@@ -8,7 +8,6 @@ using namespace std;
 enum
 {
     ERR_DOUBLE_SYM_DECL = 0,
-    ERR_DOUBLE_SECT_DECL,
     ERR_LINE_OUTSIDE_SECTION,
     ERR_UNDEFINED_SYM,
     ERR_TRAMP_OFFSET_12b,

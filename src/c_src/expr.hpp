@@ -15,6 +15,9 @@ typedef struct s_expr
     bool in_section;
 
     long symbol_table_index;
+
+    vector<long> symbol_index;
+    bool undefined_symbol_exists;
 } s_expr;
 
 // heap allocates a new expression
@@ -27,3 +30,5 @@ void simplify_expression(s_expr* expression);
 void add_literal_to_expression(s_expr* expression, long literal);
 // adds a symbol to the expression
 void add_symbol_to_expression(s_expr* expression, string symbol, int sign);
+// sets all symbol indexes
+void equ_set_symbol_indexes(s_expr* expression);

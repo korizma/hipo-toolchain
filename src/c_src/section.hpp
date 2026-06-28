@@ -10,7 +10,6 @@ struct s_rela_table;
 typedef struct s_section
 {
     long sym_table_index;
-    long rela_section_index;
     vector<char> bytes;
     bool has_rela;
     s_rela_table* rela_table;
