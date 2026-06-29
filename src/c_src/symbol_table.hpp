@@ -26,6 +26,7 @@ typedef struct s_mem_reg_sym
 {
     s_section* section;
     long offset;
+    s_asm_instruction* instruction;
 };
 
 typedef struct s_symbol_table_entry
@@ -81,4 +82,4 @@ vector<s_error> finalize_symbol_table();
 // returns the index of the symbol, if not found returns -1
 long get_symbol_entry_index_by_symbol(string symbol);
 
-void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset);
+void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset, s_asm_instruction* instruction);

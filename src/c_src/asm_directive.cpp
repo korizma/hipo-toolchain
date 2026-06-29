@@ -159,8 +159,6 @@ s_error handle_ascii(s_asm_directive* directive)
 
 s_error handle_equ(s_asm_directive* directive)
 {
-    s_section* curr_section = get_current_section();
-
     s_symbol_table_entry* symbol = get_symbol_entry_symbol(directive->equ_symbol);
 
     if (symbol != 0 && (symbol->state == STS_COMPLETE || symbol->state == STS_EQU))

@@ -47,3 +47,12 @@ bool long_fits_in_12bits(long x)
 {
     return (x >= -2048 && x <= 2047);
 }
+
+string char_to_string_hex(char x)
+{
+    string hex_chars = "0123456789ABCDEF";
+    string result = "";
+    result += hex_chars[(x >> 4) & 0x0F];
+    result += hex_chars[x & 0x0F];
+    return result;
+}
