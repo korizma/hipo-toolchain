@@ -7,6 +7,14 @@
 #include "trampoline.hpp"
 #include "symbol_table.hpp"
 
+s_error _handle_ld_imm_lit(s_asm_instruction* instruction);
+s_error _handle_ld_imm_sym(s_asm_instruction* instruction);
+s_error _handle_ld_mem_lit(s_asm_instruction* instruction);
+s_error _handle_ld_mem_sym(s_asm_instruction* instruction);
+s_error _handle_ld_reg(s_asm_instruction* instruction);
+s_error _handle_ld_reg_mem(s_asm_instruction* instruction);
+s_error _handle_ld_reg_mem_lit(s_asm_instruction* instruction);
+s_error _handle_ld_reg_mem_sym(s_asm_instruction* instruction);
 
 
 s_error handle_ld(s_asm_instruction* instruction)
@@ -14,22 +22,24 @@ s_error handle_ld(s_asm_instruction* instruction)
     switch (instruction->load_store_operand_type)
     {
         case ASM_OP_LS_IMM_LIT:
-            break;
+            return _handle_ld_imm_lit(instruction);
         case ASM_OP_LS_IMM_SYM:
-            break;
+            return _handle_ld_imm_sym(instruction);
         case ASM_OP_LS_MEM_LIT:
-            break;
+            return _handle_ld_mem_lit(instruction);
         case ASM_OP_LS_MEM_SYM:
-            break;
+            return _handle_ld_mem_sym(instruction);
         case ASM_OP_LS_REG:
-            break;
+            return _handle_ld_reg(instruction);
         case ASM_OP_LS_REG_MEM:
-            break;
+            return _handle_ld_reg_mem(instruction);
         case ASM_OP_LS_REG_MEM_LIT:
-            break;
+            return _handle_ld_reg_mem_lit(instruction);
         case ASM_OP_LS_REG_MEM_SYM:
-            break;
+            return _handle_ld_reg_mem_sym(instruction);
     }
+
+    return new_no_error();
 }
 
 // reg1 <= literal
@@ -42,7 +52,7 @@ s_error _handle_ld_imm_lit(s_asm_instruction* instruction)
 
     if (long_fits_in_12bits(literal))
     {
-        machine_instr.operation_code = 1001;     // oc for storing data
+        machine_instr.operation_code = 0b1001;     // oc for storing data
         machine_instr.modifier = 0b0001;         // modification for A <= B + disp
         machine_instr.reg_a = instruction->reg1;
         machine_instr.reg_b = 0;
@@ -57,7 +67,7 @@ s_error _handle_ld_imm_lit(s_asm_instruction* instruction)
     {
         long section_offset = get_section_offset(curr_section);
 
-        machine_instr.operation_code = 1001;     // oc for storing data
+        machine_instr.operation_code = 0b1001;     // oc for storing data
         machine_instr.modifier = 0b0010;         // modification for A < == mem[B + C + disp]
         machine_instr.reg_a = instruction->reg1 ;
         machine_instr.reg_b = ASM_REG_PC;
@@ -85,7 +95,7 @@ s_error _handle_ld_imm_sym(s_asm_instruction* instruction)
 
     long section_offset = get_section_offset(curr_section);
 
-    machine_instr.operation_code = 1001;     // oc for storing data
+    machine_instr.operation_code = 0b1001;     // oc for storing data
     machine_instr.modifier = 0b0010;         // modification for A < == mem[B + C + disp]
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = ASM_REG_PC;
@@ -109,7 +119,7 @@ s_error _handle_ld_mem_lit(s_asm_instruction* instruction)
 
     if (long_fits_in_12bits(literal))
     {
-        machine_instr.operation_code = 1001;     
+        machine_instr.operation_code = 0b1001;
         machine_instr.modifier = 0b0010;         // modification for A <= mem[B + C + disp]
         machine_instr.reg_a = instruction->reg1;
         machine_instr.reg_b = 0;
@@ -126,7 +136,7 @@ s_error _handle_ld_mem_lit(s_asm_instruction* instruction)
         // reg1 <= [reg1]
         long section_offset = get_section_offset(curr_section);
 
-        machine_instr.operation_code = 1001;     // oc for storing data
+        machine_instr.operation_code = 0b1001;     // oc for storing data
         machine_instr.modifier = 0b0001;         // modification for A <= B + disp
         machine_instr.reg_a = instruction->reg1;
         machine_instr.reg_b = ASM_REG_PC;
@@ -137,7 +147,7 @@ s_error _handle_ld_mem_lit(s_asm_instruction* instruction)
 
         add_literal_trampoline_entry(curr_section, section_offset+2, section_offset, literal);
 
-        machine_instr.operation_code = 1001;     // oc for storing data
+        machine_instr.operation_code = 0b1001;     // oc for storing data
         machine_instr.modifier = 0b0010;         // modification for A <= mem[B + C + disp]
         machine_instr.reg_a = instruction->reg1;
         machine_instr.reg_b = instruction->reg1;
@@ -166,7 +176,7 @@ s_error _handle_ld_mem_sym(s_asm_instruction* instruction)
 
     long section_offset = get_section_offset(curr_section);
 
-    machine_instr.operation_code = 1001;     // oc for storing data
+    machine_instr.operation_code = 0b1001;     // oc for storing data
     machine_instr.modifier = 0b0001;         // modification for A <= B + disp
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = ASM_REG_PC;
@@ -177,7 +187,7 @@ s_error _handle_ld_mem_sym(s_asm_instruction* instruction)
 
     add_literal_trampoline_entry(curr_section, section_offset+2, section_offset, symbol_index);
 
-    machine_instr.operation_code = 1001;     // oc for storing data
+    machine_instr.operation_code = 0b1001;     // oc for storing data
     machine_instr.modifier = 0b0010;         // modification for A <= mem[B + C + disp]
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = instruction->reg1;
@@ -195,7 +205,7 @@ s_error _handle_ld_reg(s_asm_instruction* instruction)
     s_section* curr_section = get_current_section();
     s_machine_instruction machine_instr;
 
-    machine_instr.operation_code = 1001;     // oc for loading data
+    machine_instr.operation_code = 0b1001;     // oc for loading data
     machine_instr.modifier = 0b0001;         // modification A <= B + disp
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = instruction->load_store_register;
@@ -213,7 +223,7 @@ s_error _handle_ld_reg_mem(s_asm_instruction* instruction)
     s_section* curr_section = get_current_section();
     s_machine_instruction machine_instr;
 
-    machine_instr.operation_code = 1001;     // oc for storing data
+    machine_instr.operation_code = 0b1001;     // oc for storing data
     machine_instr.modifier = 0b0010;         // modification A <= mem[B + C + disp]
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = 0;
@@ -235,7 +245,7 @@ s_error _handle_ld_reg_mem_lit(s_asm_instruction* instruction)
 
     if (long_fits_in_12bits(literal))
     {
-        machine_instr.operation_code = 1000;     // oc for storing data
+        machine_instr.operation_code = 0b1000;     // oc for storing data
         machine_instr.modifier = 0b0000;         // modification for mem[A + B + disp] <= C
         machine_instr.reg_a = instruction->load_store_register;
         machine_instr.reg_b = 0;
@@ -263,7 +273,7 @@ s_error _handle_ld_reg_mem_sym(s_asm_instruction* instruction)
 
     long section_offset = get_section_offset(curr_section);
 
-    machine_instr.operation_code = 1000;     // oc for storing data
+    machine_instr.operation_code = 0b1000;     // oc for storing data
     machine_instr.modifier = 0b0000;         // modification mem[A + B + disp] <= C
     machine_instr.reg_a = instruction->load_store_register;
     machine_instr.reg_b = 0;
@@ -271,8 +281,7 @@ s_error _handle_ld_reg_mem_sym(s_asm_instruction* instruction)
     machine_instr.displacement = 0;         
 
     write_machine_instr_to_section(curr_section, machine_instr);
-    add_mem_reg_sym_to_symbol(symbol, curr_section, section_offset);
+    add_mem_reg_sym_to_symbol(symbol, curr_section, section_offset, instruction);
 
     return new_no_error();
 }
-

@@ -16,10 +16,10 @@ s_symbol_table_entry* get_symbol_entry_symbol(string symbol)
 {
     s_symbol_table* table = get_symbol_table(); 
 
-    for (s_symbol_table_entry entry : table->entries)
+    for (int i = 0; i < table->entries.size(); i++)
     {
-        if (entry.name == symbol)
-            return &entry;
+        if (table->entries[i].name == symbol)
+            return &table->entries[i];
     }
     return NULL;
 }
@@ -28,7 +28,7 @@ s_symbol_table_entry* create_new_symbol_entry(string symbol)
 {
     s_symbol_table* table = get_symbol_table(); 
 
-    for (s_symbol_table_entry entry : table->entries)
+    for (s_symbol_table_entry& entry : table->entries)
     {
         if (entry.name == symbol)
             return NULL;
@@ -50,11 +50,13 @@ s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol)
     
     s_symbol_table* table = get_symbol_table(); 
 
-    for (s_symbol_table_entry entry : table->entries)
+    for (int i = 0; i < table->entries.size(); i++)
     {
-        if (entry.name == symbol)
-            return &entry;
+        if (table->entries[i].name == symbol)
+            return &table->entries[i];
     }
+
+    return NULL;
 }
 
 long get_symbol_entry_index_by_symbol(string symbol)
@@ -114,7 +116,7 @@ string symbol_table_to_string()
 vector<s_error> _find_undefined_symbols_symbol_table()
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
     {
         if (symbol.state != STS_COMPLETE && symbol.state != STS_EQU)
         {
@@ -127,7 +129,7 @@ vector<s_error> _find_undefined_symbols_symbol_table()
 vector<s_error> _finalize_equ_symbols_symbol_table()
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
     {
         if (symbol.state == STS_EQU)
         {

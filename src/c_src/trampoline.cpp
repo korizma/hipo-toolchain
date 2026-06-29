@@ -50,11 +50,14 @@ s_error write_trampoline_entry(s_trampoline_entry* entry)
 
         return new_no_error();
     }
-    else if (entry->type = TRMP_SYM)
+    else if (entry->type == TRMP_SYM)
     {
         // for later
         // case if the symbol is EQU and has value less than 12bits, we can just put that as displacement
+        return new_no_error();
     }
+
+    return new_no_error();
 }
 
 vector<s_error> write_trampolines()

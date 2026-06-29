@@ -8,33 +8,6 @@
 #include "symbol_table.hpp"
 
 
-s_error handle_call(s_asm_instruction* instruction)
-{
-    char oc = 0b0010, mod_12bit_fit = 0b0000, mod_12bit_no_fit = 0b0001;
-    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
-}
-
-s_error handle_jmp(s_asm_instruction* instruction)
-{
-    char oc = 0b0011, mod_12bit_fit = 0b0000, mod_12bit_no_fit = 0b1000;
-    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
-}
-s_error handle_beq(s_asm_instruction* instruction)
-{
-    char oc = 0b0011, mod_12bit_fit = 0b0001, mod_12bit_no_fit = 0b1001;
-    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
-}
-s_error handle_bne(s_asm_instruction* instruction)
-{
-    char oc = 0b0011, mod_12bit_fit = 0b0010, mod_12bit_no_fit = 0b1010;
-    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
-}
-s_error handle_bgt(s_asm_instruction* instruction)
-{
-    char oc = 0b0011, mod_12bit_fit = 0b0011, mod_12bit_no_fit = 0b1011;
-    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
-}
-
 s_error _handle_jump_branch(s_asm_instruction* instruction, char oc, char mod_12bit_fit, char mod_12bit_no_fit)
 {
     s_section* curr_section = get_current_section();
@@ -101,4 +74,33 @@ s_error _handle_jump_branch(s_asm_instruction* instruction, char oc, char mod_12
 
         return new_no_error();
     }
+
+    return new_no_error();
+}
+
+s_error handle_call(s_asm_instruction* instruction)
+{
+    char oc = 0b0010, mod_12bit_fit = 0b0000, mod_12bit_no_fit = 0b0001;
+    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
+}
+
+s_error handle_jmp(s_asm_instruction* instruction)
+{
+    char oc = 0b0011, mod_12bit_fit = 0b0000, mod_12bit_no_fit = 0b1000;
+    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
+}
+s_error handle_beq(s_asm_instruction* instruction)
+{
+    char oc = 0b0011, mod_12bit_fit = 0b0001, mod_12bit_no_fit = 0b1001;
+    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
+}
+s_error handle_bne(s_asm_instruction* instruction)
+{
+    char oc = 0b0011, mod_12bit_fit = 0b0010, mod_12bit_no_fit = 0b1010;
+    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
+}
+s_error handle_bgt(s_asm_instruction* instruction)
+{
+    char oc = 0b0011, mod_12bit_fit = 0b0011, mod_12bit_no_fit = 0b1011;
+    return _handle_jump_branch(instruction, oc, mod_12bit_fit, mod_12bit_no_fit);
 }

@@ -21,8 +21,13 @@ s_program* get_program()
 
 void init_program()
 {
-    program.symbol_table = (s_symbol_table*)malloc(sizeof(s_symbol_table));
-    program.trampoline = (s_trampoline*)malloc(sizeof(s_trampoline));
+    program.lines.clear();
+    program.lines_ended = false;
+    program.section_list.clear();
+    program.lines.reserve(4096);
+    program.section_list.reserve(128);
+    program.symbol_table = new s_symbol_table();
+    program.trampoline = new s_trampoline();
 }
 
 void add_instruction_to_program(s_asm_instruction* instruction)
@@ -52,6 +57,21 @@ void add_label_to_program(string label)
     program.lines.push_back(new_line);
 }
 
+string asm_line_to_string(s_asm_line* line)
+{
+    if (line == NULL)
+        return "";
+
+    if (line->asm_type == ASM_LABEL)
+        return line->label + ":";
+    if (line->asm_type == ASM_INSTRUCTION)
+        return asm_instruction_to_string(line->instruction);
+    if (line->asm_type == ASM_DIRECTIVE)
+        return asm_directive_to_string(line->directive);
+
+    return "";
+}
+
 vector<s_asm_line> get_program_lines()
 {
     return program.lines;
@@ -59,8 +79,10 @@ vector<s_asm_line> get_program_lines()
 
 bool assemble_program_to_file(string filename)
 {
-    init_program();
-    assemble_lines();
+    bool success = assemble_lines();
+
+    if (!success)
+        return false;
 
     std::ofstream file(filename);
 
@@ -91,7 +113,7 @@ bool assemble_lines()
         else if (line.asm_type == ASM_DIRECTIVE)
             error = handle_asm_directive(line.directive);
 
-        if (error.no_error)
+        if (!error.no_error)
         {
             has_errors = true;
             cout << error_to_string(error) << endl;
@@ -188,6 +210,13 @@ s_error handle_label(s_asm_line* line)
 
 void free_program()
 {
-    free(program.trampoline);
-    free(program.symbol_table);
+    delete program.trampoline;
+    delete program.symbol_table;
+    program.trampoline = NULL;
+    program.symbol_table = NULL;
+}
+
+void add_section_to_program(s_section* section)
+{
+    program.section_list.push_back(*section);
 }

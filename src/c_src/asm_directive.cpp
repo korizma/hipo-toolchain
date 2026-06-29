@@ -8,8 +8,7 @@
 
 s_asm_directive* new_asm_directive()
 {
-    s_asm_directive* new_dir = (s_asm_directive*)malloc(sizeof(s_asm_directive));
-    return new_dir;
+    return new s_asm_directive();
 }
 
 s_error handle_asm_directive(s_asm_directive* directive)
@@ -37,6 +36,9 @@ s_error handle_asm_directive(s_asm_directive* directive)
         break;
     case ASM_DIR_WORD:
         err = handle_word(directive);
+        break;
+    case ASM_DIR_END:
+        err = new_no_error();
         break;
     }
 
@@ -130,6 +132,8 @@ s_error handle_word(s_asm_directive* directive)
             write_bytes_to_section(curr_section, literal_bytes);
         }
     }
+
+    return new_no_error();
 }
 
 s_error handle_skip(s_asm_directive* directive)

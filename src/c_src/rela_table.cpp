@@ -12,7 +12,7 @@ s_rela_table* new_rela_table(s_section* section)
     {
         return section->rela_table;
     }
-    s_rela_table* rela = (s_rela_table*)malloc(sizeof(s_rela_table));
+    s_rela_table* rela = new s_rela_table();
     rela->section_symbol_table_index = section->sym_table_index;
     
     section->rela_table = rela;

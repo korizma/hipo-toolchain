@@ -7,7 +7,7 @@ using namespace std;
 
 s_expr* new_expression()
 {
-    s_expr* expression = (s_expr*)malloc(sizeof(s_expr));
+    s_expr* expression = new s_expr();
     expression->integer_value = 0;
     expression->in_section = false;
     expression->symbol_table_index = -1;
@@ -15,9 +15,29 @@ s_expr* new_expression()
     return expression;
 }
 
-bool expression_is_valid(s_expr* expression);
+void simplify_expression(s_expr* expression)
+{
+    vector<string> symbols;
+    vector<long> coeffs;
 
-void simplify_expression(s_expr* expression);
+    for (int i = 0; i < expression->symbol.size(); i++)
+    {
+        if (expression->coeff[i] == 0)
+            continue;
+
+        symbols.push_back(expression->symbol[i]);
+        coeffs.push_back(expression->coeff[i]);
+    }
+
+    expression->symbol = symbols;
+    expression->coeff = coeffs;
+}
+
+bool expression_is_valid(s_expr* expression)
+{
+    simplify_expression(expression);
+    return expression->symbol.size() <= 1;
+}
 
 void add_literal_to_expression(s_expr* expression, long literal)
 {

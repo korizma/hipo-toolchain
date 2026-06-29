@@ -6,7 +6,7 @@
 
 s_asm_instruction* new_asm_instruction()
 {
-    return (s_asm_instruction*)malloc(sizeof(s_asm_instruction));
+    return new s_asm_instruction();
 }
 
 s_error handle_asm_instruction(s_asm_instruction* instruction)

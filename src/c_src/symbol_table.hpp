@@ -7,6 +7,8 @@ using namespace std;
 
 struct s_expr;
 struct s_error;
+struct s_section;
+struct s_asm_instruction;
 
 // symbol table types
 #define STT_SECTION 1
@@ -27,7 +29,7 @@ typedef struct s_mem_reg_sym
     s_section* section;
     long offset;
     s_asm_instruction* instruction;
-};
+} s_mem_reg_sym;
 
 typedef struct s_symbol_table_entry
 {

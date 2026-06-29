@@ -2,7 +2,7 @@
 
 %{
 #include "grammar.tab.h"
-#include "helper.h"
+#include "helper.hpp"
 %}
 
 /* Definicije */

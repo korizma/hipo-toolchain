@@ -4,7 +4,11 @@
 
 s_section* new_section()
 {
-    return (s_section*)malloc(sizeof(s_section));
+    s_section* section = new s_section();
+    section->sym_table_index = -1;
+    section->has_rela = false;
+    section->rela_table = nullptr;
+    return section;
 }
 
 string get_section_symbol(s_section* section)
@@ -70,5 +74,5 @@ long get_section_offset(s_section* section)
 
 s_section* import_section(int i_dont_know_yet)
 {
-    
+    return nullptr;
 }

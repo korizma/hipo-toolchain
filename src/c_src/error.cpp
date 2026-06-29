@@ -1,6 +1,6 @@
 #include "error.hpp"
 
-s_error new_error(char type, string info = "")
+s_error new_error(char type, string info)
 {
     s_error err;
     err.type = type;

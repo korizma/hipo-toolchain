@@ -1,33 +1,28 @@
-
-
 %{
-#include "../asm/code.h"
-#include "helper.h"
+#include "helper.hpp"
+
 int yylex(void);
 void yyerror(const char *message);
 %}
 
 %code requires {
-#include "../asm/code.h"
-#include "helper.h"
+#include "helper.hpp"
 }
-
 
 %union {
     long literal;
     char* reg;
     char* symbol;
     char* string;
-    e_asm_instruction opB;
-    e_asm_register gprC;
+    char instruction;
+    char reg_id;
 
-    s_asm_line* line;
-    s_operand_jmp o_jmp;
-    s_operand_ls o_ls;
     s_gpr_pair gprs;
-    s_expr* e;
-    s_list_n_sl listn_sl;
-    s_list_n_s listn_s;
+    s_expr* expr;
+    s_symbol_list* symbol_list;
+    s_sym_lit_list* sym_lit_list;
+    s_parser_jmp_operand* jmp_operand;
+    s_parser_ls_operand* ls_operand;
 }
 
 %token <literal> LITERAL
@@ -36,22 +31,17 @@ void yyerror(const char *message);
 %token <reg> GPRX
 %token <reg> CSRX
 
-%type <o_jmp> operandJmp
-%type <o_ls> operandLS
+%type <jmp_operand> operandJmp
+%type <ls_operand> operandLS
 %type <gprs> gpr_12
-%type <line> asm_directives 
-%type <line> asm_instructions
-
-%type <listn_sl> sym_lit_list
-%type <listn_s> symbol_list
-%type <e> expr
-%type <opB> branchOp
-%type <opB> arithmethicOp
-%type <gprC> gpr_1
-%type <gprC> csr_1
+%type <symbol_list> symbol_list
+%type <sym_lit_list> sym_lit_list
+%type <expr> expr
+%type <instruction> branchOp
+%type <instruction> arithmeticOp
+%type <reg_id> gpr_1
+%type <reg_id> csr_1
 %type <symbol> symbol_name
-
-    /* Deklaracije */
 
 %token GLOBAL EXTERN SECTION WORD SKIP ASCII EQU END
 %token HALT INT IRET CALL RET JMP BEQ BNE BGT
@@ -71,168 +61,117 @@ void yyerror(const char *message);
 %start input
 
 %%
-    /* Pravila gramatike */
 
 input:
-    | line_with_comment input
+        %empty
+    |   input line_with_comment
     ;
 
 line_with_comment:
-    COMMENT line NEWLINE | line NEWLINE;
+        line NEWLINE
+    ;
 
 line:
-        
-    |   DOT asm_directives 
-    |   asm_instructions 
-    |   label 
-    |   label DOT asm_directives 
-    |   label asm_instructions 
+        %empty
+    |   DOT asm_directives
+    |   asm_instructions
+    |   label
+    |   label DOT asm_directives
+    |   label asm_instructions
     ;
 
 label:
-    symbol_name COLON {
-                s_asm_line* line = new_empty_line(); 
-                line->is_label = true; 
-                line->symbol = $1;
-                add_line(line);        
-            }
+        symbol_name COLON {
+            parser_add_label($1);
+        }
     ;
 
-asm_directives: 
+asm_directives:
         GLOBAL symbol_list {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_GLOBAL;
-                reverse_arr_sym(&$2);
-                line->symbol_list = $2.arr;
-                line->symbol_list_n = $2.n;
-                add_line(line);        
-            }
+            parser_add_symbol_list_directive(ASM_DIR_GLOBAL, $2);
+        }
     |   EXTERN symbol_list {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_EXTERN;
-                reverse_arr_sym(&$2);
-                line->symbol_list = $2.arr;
-                line->symbol_list_n = $2.n;
-                add_line(line);        
-            }
+            parser_add_symbol_list_directive(ASM_DIR_EXTERN, $2);
+        }
     |   SECTION symbol_name {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_SECTION;
-                line->section_name = $2;
-                add_line(line);        
-            }
+            parser_add_section_directive($2);
+        }
     |   WORD sym_lit_list {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_WORD;
-                reverse_arr_sl(&$2);
-                line->sym_or_lit_list = $2.arr;
-                line->sym_or_lit_list_n = $2.n;
-                add_line(line);        
-            }
+            parser_add_word_directive($2);
+        }
     |   SKIP LITERAL {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_SKIP;
-                line->byte_num = $2;
-                add_line(line);        
-            }
+            parser_add_skip_directive($2);
+        }
     |   ASCII STRING {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_ASCII;
-                line->ascii_string = $2;
-                add_line(line);        
-            }
+            parser_add_ascii_directive($2);
+        }
     |   EQU symbol_name COMMA expr {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_EQU;
-                line->new_symbol = $2;
-                line->expression = $4;
-                add_line(line);        
-            }
+            parser_add_equ_directive($2, $4);
+        }
     |   END {
-                s_asm_line* line = new_empty_line(); 
-                line->is_directive = true; 
-                line->directive = ASM_DIR_END;
-                add_line(line);        
-            }
+            parser_add_end_directive();
+        }
     ;
 
-symbol_list: 
+symbol_list:
         symbol_name {
-            $$.n = 0;
-            $$.curr_size = 10;
-            $$.arr = (char**)malloc(sizeof(char*)*$$.curr_size);
-            add_to_list_sym_list(&$$, $1);
+            $$ = parser_new_symbol_list($1);
         }
-        | symbol_name COMMA symbol_list {
-            add_to_list_sym_list(&$3, $1);
-            $$ = $3;
+    |   symbol_list COMMA symbol_name {
+            parser_add_symbol_to_list($1, $3);
+            $$ = $1;
         }
-        ;
+    ;
 
 sym_lit_list:
         LITERAL {
-            $$.n = 0;
-            $$.curr_size = 10;
-            $$.arr = (s_sym_or_lit**)malloc(sizeof(s_sym_or_lit*)*$$.curr_size);
-            s_sym_or_lit* novi = new_lit_sl($1);
-            add_to_list_sl_list(&$$, novi);
+            $$ = parser_new_sym_lit_list(new_lit_sl($1));
         }
-        | symbol_name {
-            $$.n = 0;
-            $$.curr_size = 10;
-            $$.arr = (s_sym_or_lit**)malloc(sizeof(s_sym_or_lit*)*$$.curr_size);
-            s_sym_or_lit* novi = new_sym_sl($1);
-            add_to_list_sl_list(&$$, novi);
+    |   symbol_name {
+            $$ = parser_new_sym_lit_list(new_sym_sl($1));
         }
-        | symbol_name COMMA sym_lit_list {
-            add_to_list_sl_list(&$3, new_sym_sl($1));
-            $$ = $3;
+    |   sym_lit_list COMMA symbol_name {
+            parser_add_sym_lit_to_list($1, new_sym_sl($3));
+            $$ = $1;
         }
-        | LITERAL COMMA sym_lit_list {
-            add_to_list_sl_list(&$3, new_lit_sl($1));
-            $$ = $3;
+    |   sym_lit_list COMMA LITERAL {
+            parser_add_sym_lit_to_list($1, new_lit_sl($3));
+            $$ = $1;
         }
-        ;
+    ;
 
 expr:
         LITERAL {
-            $$ = new_expr();
-            add_to_expr_literal($$, $1);
+            $$ = new_expression();
+            add_literal_to_expression($$, $1);
         }
     |   symbol_name {
-            $$ = new_expr();
-            add_to_expr_symbol($$, $1, 1);
+            $$ = new_expression();
+            add_symbol_to_expression($$, $1, 1);
         }
     |   expr PLUS LITERAL {
             $$ = $1;
-            add_to_expr_literal($$, $3);
+            add_literal_to_expression($$, $3);
         }
     |   expr PLUS symbol_name {
             $$ = $1;
-            add_to_expr_symbol($$, $3, 1);
+            add_symbol_to_expression($$, $3, 1);
         }
     |   expr MINUS LITERAL {
             $$ = $1;
-            add_to_expr_literal($$, -$3);
+            add_literal_to_expression($$, -$3);
         }
-    |   expr MINUS symbol_name {  
+    |   expr MINUS symbol_name {
             $$ = $1;
-            add_to_expr_symbol($$, $3, -1);
+            add_symbol_to_expression($$, $3, -1);
         }
     |   MINUS LITERAL %prec UMINUS {
-            $$ = new_expr();
-            add_to_expr_literal($$, -$2);
+            $$ = new_expression();
+            add_literal_to_expression($$, -$2);
         }
     |   MINUS symbol_name %prec UMINUS {
-            $$ = new_expr();
-            add_to_expr_symbol($$, $2, -1);
+            $$ = new_expression();
+            add_symbol_to_expression($$, $2, -1);
         }
     ;
 
@@ -240,251 +179,162 @@ symbol_name:
         SYMBOL { $$ = $1; }
     |   CSRX { $$ = $1; }
     |   GPRX { $$ = $1; }
-    |   GLOBAL { $$ = "global"; }
-    |   EXTERN { $$ = "extern"; }
-    |   SECTION { $$ = "section"; }
-    |   WORD { $$ = "word"; }
-    |   SKIP { $$ = "skip"; }
-    |   ASCII { $$ = "ascii"; }
-    |   EQU { $$ = "equ"; }
-    |   END { $$ = "end"; }
-    |   HALT { $$ = "halt"; }
-    |   INT { $$ = "int"; }
-    |   IRET { $$ = "iret"; }
-    |   CALL { $$ = "call"; }
-    |   RET { $$ = "ret"; }
-    |   JMP { $$ = "jmp"; }
-    |   BEQ { $$ = "beq"; }
-    |   BNE { $$ = "bne"; }
-    |   BGT { $$ = "bgt"; }
-    |   PUSH { $$ = "push"; }
-    |   POP { $$ = "pop"; }
-    |   XCHG { $$ = "xchg"; }
-    |   ADD { $$ = "add"; }
-    |   SUB { $$ = "sub"; }
-    |   MUL { $$ = "mul"; }
-    |   DIV { $$ = "div"; }
-    |   NOT { $$ = "not"; }
-    |   AND { $$ = "and"; }
-    |   OR { $$ = "or"; }
-    |   XOR { $$ = "xor"; }
-    |   SHL { $$ = "shl"; }
-    |   SHR { $$ = "shr"; }
-    |   LD { $$ = "ld"; }
-    |   ST { $$ = "st"; }
-    |   CSRRD { $$ = "csrrd"; }
-    |   CSRWR { $$ = "csrwr"; }
+    |   GLOBAL { $$ = parser_copy_symbol("global"); }
+    |   EXTERN { $$ = parser_copy_symbol("extern"); }
+    |   SECTION { $$ = parser_copy_symbol("section"); }
+    |   WORD { $$ = parser_copy_symbol("word"); }
+    |   SKIP { $$ = parser_copy_symbol("skip"); }
+    |   ASCII { $$ = parser_copy_symbol("ascii"); }
+    |   EQU { $$ = parser_copy_symbol("equ"); }
+    |   END { $$ = parser_copy_symbol("end"); }
+    |   HALT { $$ = parser_copy_symbol("halt"); }
+    |   INT { $$ = parser_copy_symbol("int"); }
+    |   IRET { $$ = parser_copy_symbol("iret"); }
+    |   CALL { $$ = parser_copy_symbol("call"); }
+    |   RET { $$ = parser_copy_symbol("ret"); }
+    |   JMP { $$ = parser_copy_symbol("jmp"); }
+    |   BEQ { $$ = parser_copy_symbol("beq"); }
+    |   BNE { $$ = parser_copy_symbol("bne"); }
+    |   BGT { $$ = parser_copy_symbol("bgt"); }
+    |   PUSH { $$ = parser_copy_symbol("push"); }
+    |   POP { $$ = parser_copy_symbol("pop"); }
+    |   XCHG { $$ = parser_copy_symbol("xchg"); }
+    |   ADD { $$ = parser_copy_symbol("add"); }
+    |   SUB { $$ = parser_copy_symbol("sub"); }
+    |   MUL { $$ = parser_copy_symbol("mul"); }
+    |   DIV { $$ = parser_copy_symbol("div"); }
+    |   NOT { $$ = parser_copy_symbol("not"); }
+    |   AND { $$ = parser_copy_symbol("and"); }
+    |   OR { $$ = parser_copy_symbol("or"); }
+    |   XOR { $$ = parser_copy_symbol("xor"); }
+    |   SHL { $$ = parser_copy_symbol("shl"); }
+    |   SHR { $$ = parser_copy_symbol("shr"); }
+    |   LD { $$ = parser_copy_symbol("ld"); }
+    |   ST { $$ = parser_copy_symbol("st"); }
+    |   CSRRD { $$ = parser_copy_symbol("csrrd"); }
+    |   CSRWR { $$ = parser_copy_symbol("csrwr"); }
     ;
 
 asm_instructions:
         HALT {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_HALT;
-                add_line(line);        
-            }
+            parser_add_no_operand_instruction(ASM_INSTR_HALT);
+        }
     |   INT {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_INT;
-                add_line(line);        
-            }
+            parser_add_no_operand_instruction(ASM_INSTR_INT);
+        }
     |   IRET {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_IRET;
-                add_line(line);        
-            }
+            parser_add_no_operand_instruction(ASM_INSTR_IRET);
+        }
     |   RET {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_RET;
-                add_line(line);        
-            }
+            parser_add_no_operand_instruction(ASM_INSTR_RET);
+        }
     |   CALL operandJmp {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_CALL;
-                line->o_jmp = $2;
-                add_line(line);      
-            }
+            parser_add_jump_instruction(ASM_INSTR_CALL, $2);
+        }
     |   JMP operandJmp {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_JMP;
-                line->o_jmp = $2;
-                add_line(line);      
-            }
+            parser_add_jump_instruction(ASM_INSTR_JMP, $2);
+        }
     |   branchOp gpr_12 COMMA operandJmp {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = $1;
-                line->reg1 = $2.reg1;
-                line->reg2 = $2.reg2;
-                line->o_jmp = $4;
-                add_line(line);      
-            }
+            parser_add_branch_instruction($1, $2, $4);
+        }
     |   PUSH gpr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_PUSH;
-                line->reg1 = $2;
-                add_line(line);      
-            }
+            parser_add_single_gpr_instruction(ASM_INSTR_PUSH, $2);
+        }
     |   POP gpr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_POP;
-                line->reg1 = $2;
-                add_line(line);      
-            }
+            parser_add_single_gpr_instruction(ASM_INSTR_POP, $2);
+        }
     |   NOT gpr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_NOT;
-                line->reg1 = $2;
-                add_line(line);      
-            }
-    |   arithmethicOp gpr_12 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = $1;
-                line->reg1 = $2.reg1;
-                line->reg2 = $2.reg2;
-                add_line(line);      
-            }
+            parser_add_single_gpr_instruction(ASM_INSTR_NOT, $2);
+        }
+    |   arithmeticOp gpr_12 {
+            parser_add_two_gpr_instruction($1, $2);
+        }
     |   LD operandLS COMMA gpr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_LD;
-                line->reg1 = $4;
-                line->o_ls = $2;
-                add_line(line);      
-            }
+            parser_add_ld_instruction($2, $4);
+        }
     |   ST gpr_1 COMMA operandLS {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_ST;
-                line->reg1 = $2;
-                line->o_ls = $4;
-                add_line(line);      
-            }
+            parser_add_st_instruction($2, $4);
+        }
     |   CSRRD csr_1 COMMA gpr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_CSRRD;
-                line->reg1 = $2;
-                line->reg2 = $4;
-                add_line(line);      
-            }
+            parser_add_csrrd_instruction($2, $4);
+        }
     |   CSRWR gpr_1 COMMA csr_1 {
-                s_asm_line* line = new_empty_line(); 
-                line->is_instruction = true; 
-                line->instruction = ASM_INSTR_CSRWR;
-                line->reg1 = $2;
-                line->reg2 = $4;
-                add_line(line);      
-            }
+            parser_add_csrwr_instruction($2, $4);
+        }
+    ;
 
 gpr_12:
-    PERCENT GPRX COMMA PERCENT GPRX {$$.reg1 = reg_from_name($2); $$.reg2 = reg_from_name($5);}
+        PERCENT GPRX COMMA PERCENT GPRX {
+            $$.reg1 = reg_from_name($2);
+            $$.reg2 = reg_from_name($5);
+        }
     ;
 
 gpr_1:
-    PERCENT GPRX {$$ = reg_from_name($2);}
+        PERCENT GPRX {
+            $$ = reg_from_name($2);
+        }
     ;
 
 csr_1:
-    PERCENT CSRX {$$ = reg_from_name($2);}
+        PERCENT CSRX {
+            $$ = reg_from_name($2);
+        }
     ;
 
 branchOp:
-        BNE {$$ = ASM_INSTR_BNE;}
-    |   BEQ {$$ = ASM_INSTR_BEQ;}
-    |   BGT {$$ = ASM_INSTR_BGT;}
+        BNE { $$ = ASM_INSTR_BNE; }
+    |   BEQ { $$ = ASM_INSTR_BEQ; }
+    |   BGT { $$ = ASM_INSTR_BGT; }
     ;
 
-arithmethicOp:
-        XCHG {$$ = ASM_INSTR_XCHG;}
-    |   ADD {$$ = ASM_INSTR_ADD;}
-    |   SUB {$$ = ASM_INSTR_SUB;}
-    |   MUL {$$ = ASM_INSTR_MUL;}
-    |   DIV {$$ = ASM_INSTR_DIV;}
-    |   AND {$$ = ASM_INSTR_AND;}
-    |   OR {$$ = ASM_INSTR_OR;}
-    |   XOR {$$ = ASM_INSTR_XOR;}
-    |   SHL {$$ = ASM_INSTR_SHL;}
-    |   SHR {$$ = ASM_INSTR_SHR;}
+arithmeticOp:
+        XCHG { $$ = ASM_INSTR_XCHG; }
+    |   ADD { $$ = ASM_INSTR_ADD; }
+    |   SUB { $$ = ASM_INSTR_SUB; }
+    |   MUL { $$ = ASM_INSTR_MUL; }
+    |   DIV { $$ = ASM_INSTR_DIV; }
+    |   AND { $$ = ASM_INSTR_AND; }
+    |   OR { $$ = ASM_INSTR_OR; }
+    |   XOR { $$ = ASM_INSTR_XOR; }
+    |   SHL { $$ = ASM_INSTR_SHL; }
+    |   SHR { $$ = ASM_INSTR_SHR; }
     ;
 
 operandJmp:
         LITERAL {
-            $$.is_literal = true;
-            $$.is_symbol = false;
-            $$.symbol = 0;
-            $$.literal = $1;
+            $$ = parser_new_jmp_literal($1);
         }
     |   symbol_name {
-            $$.is_literal = false;
-            $$.is_symbol = true;
-            $$.symbol = $1;
-            $$.literal = 0;
+            $$ = parser_new_jmp_symbol($1);
         }
     ;
-
 
 operandLS:
         DOLLAR LITERAL {
-            $$.kind = ASM_OPERAND_LS_IMM_LITERAL;
-            $$.literal = $2;
-            $$.symbol = 0;
-            $$.reg = ASM_REG_R0;
+            $$ = parser_new_ls_operand(ASM_OP_LS_IMM_LIT, $2, NULL, ASM_REG_R0);
         }
     |   DOLLAR symbol_name {
-            $$.kind = ASM_OPERAND_LS_IMM_SYMBOL;
-            $$.literal = 0;
-            $$.symbol = $2;
-            $$.reg = ASM_REG_R0;
+            $$ = parser_new_ls_operand(ASM_OP_LS_IMM_SYM, 0, $2, ASM_REG_R0);
         }
     |   LITERAL {
-            $$.kind = ASM_OPERAND_LS_MEM_LITERAL;
-            $$.literal = $1;
-            $$.symbol = 0;
-            $$.reg = ASM_REG_R0;
+            $$ = parser_new_ls_operand(ASM_OP_LS_MEM_LIT, $1, NULL, ASM_REG_R0);
         }
     |   symbol_name {
-            $$.kind = ASM_OPERAND_LS_MEM_SYMBOL;
-            $$.literal = 0;
-            $$.symbol = $1;
-            $$.reg = ASM_REG_R0;
+            $$ = parser_new_ls_operand(ASM_OP_LS_MEM_SYM, 0, $1, ASM_REG_R0);
         }
     |   PERCENT GPRX {
-            $$.kind = ASM_OPERAND_LS_REG;
-            $$.literal = 0;
-            $$.symbol = 0;
-            $$.reg = reg_from_name($2);
+            $$ = parser_new_ls_operand(ASM_OP_LS_REG, 0, NULL, reg_from_name($2));
         }
     |   RBRACK PERCENT GPRX LBRACK {
-            $$.kind = ASM_OPERAND_LS_REG_INDIRECT;
-            $$.literal = 0;
-            $$.symbol = 0;
-            $$.reg = reg_from_name($3);
+            $$ = parser_new_ls_operand(ASM_OP_LS_REG_MEM, 0, NULL, reg_from_name($3));
         }
     |   RBRACK PERCENT GPRX PLUS LITERAL LBRACK {
-            $$.kind = ASM_OPERAND_LS_REG_INDIRECT_LITERAL;
-            $$.reg = reg_from_name($3);
-            $$.literal = $5;
-            $$.symbol = 0;
+            $$ = parser_new_ls_operand(ASM_OP_LS_REG_MEM_LIT, $5, NULL, reg_from_name($3));
         }
     |   RBRACK PERCENT GPRX PLUS symbol_name LBRACK {
-            $$.kind = ASM_OPERAND_LS_REG_INDIRECT_SYMBOL;
-            $$.literal = 0;
-            $$.reg = reg_from_name($3);
-            $$.symbol = $5;
+            $$ = parser_new_ls_operand(ASM_OP_LS_REG_MEM_SYM, 0, $5, reg_from_name($3));
         }
     ;
 
-
 %%
-
-    /* C kod */
