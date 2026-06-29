@@ -69,9 +69,6 @@ s_symbol_table_entry* create_new_symbol_entry(string symbol);
 // returns the symbol pointer if it already exists, if not creates it and returns it
 s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol);
 
-// return the entry in binary format
-vector<char> symbol_table_entry_to_bytes(s_symbol_table_entry entry);
-
 // returns the string view of the symbol table, used for final text file export
 string symbol_table_to_string();
 

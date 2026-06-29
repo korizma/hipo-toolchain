@@ -56,3 +56,17 @@ string char_to_string_hex(char x)
     result += hex_chars[x & 0x0F];
     return result;
 }
+
+
+string long_to_string_hex(long x)
+{
+    string hex_chars = "0123456789ABCDEF";
+    string result = "";
+    for (int i = 7; i >= 0; i--)
+    {
+        char byte = (x >> (i * 8)) & 0xFF;
+        result += hex_chars[(byte >> 4) & 0x0F];
+        result += hex_chars[byte & 0x0F];
+    }
+    return result;
+}

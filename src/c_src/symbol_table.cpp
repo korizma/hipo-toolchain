@@ -2,6 +2,10 @@
 #include "asm.hpp"
 #include "error.hpp"
 #include "expr.hpp"
+#include "asm_instruction.hpp"
+#include "section.hpp"
+#include "misc.hpp"
+#include "rela_table.hpp"
 
 s_symbol_table_entry* get_symbol_entry_index(int index)
 {
@@ -72,8 +76,6 @@ long get_symbol_entry_index_by_symbol(string symbol)
     return -1;
 }
 
-vector<char> symbol_table_entry_to_bytes(s_symbol_table_entry entry);
-
 string symbol_table_entry_to_string(s_symbol_table_entry entry, long index)
 {
     string num = to_string(index) + ":";
@@ -107,7 +109,7 @@ string symbol_table_to_string()
     for (int i = 0; i < get_symbol_table()->entries.size(); i++)
     {
         s_symbol_table_entry entry = get_symbol_table()->entries[i];
-        final_string += symbol_table_entry_to_string(entry, i);
+        final_string += symbol_table_entry_to_string(entry, i) + "\n";
     }
 
     return final_string;
@@ -124,6 +126,14 @@ vector<s_error> _find_undefined_symbols_symbol_table()
         }
     }
     return errs;
+}
+
+void _update_rela_table_for_symbols_symbol_table()
+{
+    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    {
+        rela_table_symbol_update(&symbol);
+    }
 }
 
 vector<s_error> _finalize_equ_symbols_symbol_table()
@@ -162,15 +172,53 @@ vector<s_error> _finalize_equ_symbols_symbol_table()
     return errs;
 }
 
-vector<s_error> _check_equ_mem_reg_sym_addressing()
+vector<s_error> _rela_equ_updating()
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
     {
         if (symbol.state == STS_EQU)
         {
             // if its only a literal, then find all rela and do them
+            if (symbol.expression->symbol.size() == 0)
+            {
+                rela_table_symbol_execute_and_remove(&symbol);
+            }
             // if its not, then you need to edit the rela entries if the visibility is not global
+            else if (symbol.binding == STB_LOCAL)
+            {
+                rela_table_symbol_update(&symbol);
+            }
+        }
+    }
+    return errs;
+}
+
+vector<s_error> _check_equ_mem_reg_sym_addressing()
+{
+    vector<s_error> errs;
+    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    {
+        if (symbol.state == STS_EQU)
+        {
+            for (s_mem_reg_sym rs : symbol.mem_reg_sym_list)
+            {
+                if (symbol.expression->symbol.size() == 0)
+                {
+                    write_to_lower_12b(rs.section->bytes, rs.offset, symbol.offset_or_value);
+                }
+                else
+                {
+                    errs.push_back(new_error(ERR_SYMBOL_TOO_LARGE_LS, asm_instruction_to_string(rs.instruction)));
+                }
+            }
+        }
+        else if (symbol.mem_reg_sym_list.size() != 0)
+        {
+            for (s_mem_reg_sym rs : symbol.mem_reg_sym_list)
+            {
+                errs.push_back(new_error(ERR_SYMBOL_TOO_LARGE_LS, asm_instruction_to_string(rs.instruction)));
+            }
         }
     }
     return errs;

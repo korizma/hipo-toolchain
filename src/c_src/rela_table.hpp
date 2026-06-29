@@ -6,6 +6,7 @@
 using namespace std;
 
 struct s_section; 
+struct s_symbol_table_entry;
 
 #define R_HIPO_32 0
 #define R_HIPO_12 1
@@ -40,3 +41,9 @@ string rela_table_to_string(s_rela_table* rela_table);
 
 // signature not final yet
 s_rela_table* import_rela_table(int i_dont_know_yet);
+
+// executes all relocations for this symbol
+void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol);
+
+// updates the entries for the symbol
+void rela_table_symbol_update(s_symbol_table_entry* symbol);

@@ -105,11 +105,6 @@ s_error handle_asm_instruction(s_asm_instruction* instruction)
     return err;
 }
 
-string asm_instruction_to_string(s_asm_instruction* instruction)
-{
-    return "";
-}
-
 s_error handle_halt(s_asm_instruction* instruction)
 {
     s_section* curr_section = get_current_section();
@@ -460,4 +455,130 @@ s_error handle_csrwr(s_asm_instruction* instruction)
     write_machine_instr_to_section(curr_section, machine_instr);
 
     return new_no_error();
+}
+
+
+
+static string asm_gpr_to_string(char reg)
+{
+    return string("%r") + to_string((int)reg);
+}
+
+static string asm_csr_to_string(char reg)
+{
+    switch (reg)
+    {
+    case ASM_REG_STATUS:
+        return "%status";
+    case ASM_REG_HANDLER:
+        return "%handler";
+    case ASM_REG_CAUSE:
+        return "%cause";
+    default:
+        return "";
+    }
+}
+
+static string asm_jump_operand_to_string(s_asm_instruction* instruction)
+{
+    switch (instruction->jump_branch_operand_type)
+    {
+    case ASM_OP_JMP_LIT:
+        return to_string(instruction->jump_branch_literal);
+    case ASM_OP_JMP_SYM:
+        return instruction->jump_branch_symbol;
+    default:
+        return "";
+    }
+}
+
+static string asm_load_store_operand_to_string(s_asm_instruction* instruction)
+{
+    string reg = asm_gpr_to_string(instruction->load_store_register);
+
+    switch (instruction->load_store_operand_type)
+    {
+    case ASM_OP_LS_IMM_LIT:
+        return "$" + to_string(instruction->load_store_literal);
+    case ASM_OP_LS_IMM_SYM:
+        return "$" + instruction->load_store_symbol;
+    case ASM_OP_LS_MEM_LIT:
+        return to_string(instruction->load_store_literal);
+    case ASM_OP_LS_MEM_SYM:
+        return instruction->load_store_symbol;
+    case ASM_OP_LS_REG:
+        return reg;
+    case ASM_OP_LS_REG_MEM:
+        return "[" + reg + "]";
+    case ASM_OP_LS_REG_MEM_LIT:
+        return "[" + reg + " + " + to_string(instruction->load_store_literal) + "]";
+    case ASM_OP_LS_REG_MEM_SYM:
+        return "[" + reg + " + " + instruction->load_store_symbol + "]";
+    default:
+        return "";
+    }
+}
+
+string asm_instruction_to_string(s_asm_instruction* instruction)
+{
+    if (instruction == NULL)
+        return "";
+
+    switch (instruction->instruction)
+    {
+    case ASM_INSTR_HALT:
+        return "halt";
+    case ASM_INSTR_INT:
+        return "int";
+    case ASM_INSTR_IRET:
+        return "iret";
+    case ASM_INSTR_CALL:
+        return "call " + asm_jump_operand_to_string(instruction);
+    case ASM_INSTR_RET:
+        return "ret";
+    case ASM_INSTR_JMP:
+        return "jmp " + asm_jump_operand_to_string(instruction);
+    case ASM_INSTR_BEQ:
+        return "beq " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2) + ", " + asm_jump_operand_to_string(instruction);
+    case ASM_INSTR_BNE:
+        return "bne " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2) + ", " + asm_jump_operand_to_string(instruction);
+    case ASM_INSTR_BGT:
+        return "bgt " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2) + ", " + asm_jump_operand_to_string(instruction);
+    case ASM_INSTR_PUSH:
+        return "push " + asm_gpr_to_string(instruction->reg1);
+    case ASM_INSTR_POP:
+        return "pop " + asm_gpr_to_string(instruction->reg1);
+    case ASM_INSTR_XCHG:
+        return "xchg " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_ADD:
+        return "add " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_SUB:
+        return "sub " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_MUL:
+        return "mul " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_DIV:
+        return "div " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_NOT:
+        return "not " + asm_gpr_to_string(instruction->reg1);
+    case ASM_INSTR_AND:
+        return "and " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_OR:
+        return "or " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_XOR:
+        return "xor " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_SHL:
+        return "shl " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_SHR:
+        return "shr " + asm_gpr_to_string(instruction->reg1) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_LD:
+        return "ld " + asm_load_store_operand_to_string(instruction) + ", " + asm_gpr_to_string(instruction->reg1);
+    case ASM_INSTR_ST:
+        return "st " + asm_gpr_to_string(instruction->reg1) + ", " + asm_load_store_operand_to_string(instruction);
+    case ASM_INSTR_CSRRD:
+        return "csrrd " + asm_csr_to_string(instruction->control_reg) + ", " + asm_gpr_to_string(instruction->reg2);
+    case ASM_INSTR_CSRWR:
+        return "csrwr " + asm_gpr_to_string(instruction->reg1) + ", " + asm_csr_to_string(instruction->control_reg);
+    default:
+        return "";
+    }
 }

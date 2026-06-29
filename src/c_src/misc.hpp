@@ -25,3 +25,5 @@ void write_to_lower_12b(vector<char>& mem, long offset, int value_12bit);
 bool long_fits_in_12bits(long x);
 
 string char_to_string_hex(char x);
+
+string long_to_string_hex(long x);

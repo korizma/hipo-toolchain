@@ -5,6 +5,7 @@
 #include "section.hpp"
 #include "misc.hpp"
 #include "rela_table.hpp"
+#include "expr.hpp"
 
 s_asm_directive* new_asm_directive()
 {
@@ -185,7 +186,104 @@ s_error handle_equ(s_asm_directive* directive)
 }
 
 
+static string string_list_to_string(vector<string> list)
+{
+    string result = "";
+
+    for (int i = 0; i < list.size(); i++)
+    {
+        if (i != 0)
+            result += ", ";
+
+        result += list[i];
+    }
+
+    return result;
+}
+
+static string sym_lit_list_to_string(vector<s_sym_lit> list)
+{
+    string result = "";
+
+    for (int i = 0; i < list.size(); i++)
+    {
+        if (i != 0)
+            result += ", ";
+
+        if (list[i].type == SL_SYM)
+            result += list[i].symbol;
+        else if (list[i].type == SL_LIT)
+            result += to_string(list[i].literal);
+    }
+
+    return result;
+}
+
+static string expr_to_string(s_expr* expr)
+{
+    if (expr == NULL)
+        return "";
+
+    string result = "";
+
+    for (int i = 0; i < expr->symbol.size(); i++)
+    {
+        long coeff = expr->coeff[i];
+
+        if (coeff == 0)
+            continue;
+
+        if (result.size() != 0)
+            result += coeff < 0 ? " - " : " + ";
+        else if (coeff < 0)
+            result += "-";
+
+        long abs_coeff = coeff < 0 ? -coeff : coeff;
+
+        if (abs_coeff != 1)
+            result += to_string(abs_coeff) + "*";
+
+        result += expr->symbol[i];
+    }
+
+    if (expr->integer_value != 0 || result.size() == 0)
+    {
+        if (result.size() != 0)
+            result += expr->integer_value < 0 ? " - " : " + ";
+        else if (expr->integer_value < 0)
+            result += "-";
+
+        long abs_value = expr->integer_value < 0 ? -expr->integer_value : expr->integer_value;
+        result += to_string(abs_value);
+    }
+
+    return result;
+}
+
 string asm_directive_to_string(s_asm_directive* directive)
 {
-    return "";
+    if (directive == NULL)
+        return "";
+
+    switch (directive->directive)
+    {
+    case ASM_DIR_GLOBAL:
+        return ".global " + string_list_to_string(directive->symbol_list);
+    case ASM_DIR_EXTERN:
+        return ".extern " + string_list_to_string(directive->symbol_list);
+    case ASM_DIR_SECTION:
+        return ".section " + directive->section_symbol;
+    case ASM_DIR_WORD:
+        return ".word " + sym_lit_list_to_string(directive->sym_lit_list);
+    case ASM_DIR_SKIP:
+        return ".skip " + to_string(directive->skip_literal);
+    case ASM_DIR_ASCII:
+        return ".ascii \"" + directive->ascii_string + "\"";
+    case ASM_DIR_EQU:
+        return ".equ " + directive->equ_symbol + ", " + expr_to_string(directive->expr);
+    case ASM_DIR_END:
+        return ".end";
+    default:
+        return "";
+    }
 }
