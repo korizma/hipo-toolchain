@@ -226,6 +226,16 @@ vector<s_error> _check_equ_mem_reg_sym_addressing(s_symbol_table* table)
     return errs;
 }
 
+void _update_section_sizes(s_program* program)
+{
+    for (s_section& section : program->section_list)
+    {
+        s_symbol_table_entry* entry = get_symbol_entry_index(get_symbol_table(program), section.sym_table_index);
+        if (entry != NULL)
+            entry->size = section.bytes.size();
+    }
+}
+
 vector<s_error> finalize_symbol_table(s_program* program)
 {
     s_symbol_table* table = get_symbol_table(program);
@@ -244,6 +254,8 @@ vector<s_error> finalize_symbol_table(s_program* program)
 
     _rela_equ_updating(program, table);
     _update_rela_table_for_symbols_symbol_table(program, table);
+
+    _update_section_sizes(program);
 
     return {};
 }

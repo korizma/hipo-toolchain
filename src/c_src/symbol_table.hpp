@@ -25,6 +25,8 @@ struct s_program;
 #define STS_GLOBAL_REFERENCE 3
 #define STS_EQU 4
 
+struct s_linker_state;
+
 typedef struct s_mem_reg_sym
 {
     s_section* section;
@@ -85,3 +87,9 @@ vector<s_error> finalize_symbol_table(s_program* program);
 long get_symbol_entry_index_by_symbol(s_symbol_table* table, string symbol);
 
 void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset, s_asm_instruction* instruction);
+
+
+// linker specific functions
+
+// combines all symbol tables into a global symbol table, returns conflicts of symbols
+vector<string> combine_all_symbol_tables_rel(s_linker_state* linker_state);

@@ -43,9 +43,9 @@ void bind_rela_table_to_section(s_section* section, s_rela_table* rela_table)
     section->has_rela = true;
 }
 
-string section_to_string(s_program* program, s_section* section)
+string section_to_string(s_symbol_table *symbol_table, s_section* section)
 {
-    string final_string = "#" + get_section_symbol(get_symbol_table(program), section) + "\n";
+    string final_string = "#" + get_section_symbol(symbol_table, section) + "\n";
 
     int counter = 1;
     for (char c : section->bytes)
