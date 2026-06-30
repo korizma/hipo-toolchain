@@ -72,8 +72,10 @@ s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol);
 // returns the string view of the symbol table, used for final text file export
 string symbol_table_to_string();
 
+s_symbol_table_entry import_symbol_table_entry(string line);
+
 // signature not final yet
-s_symbol_table* import_symbol_table(int i_dont_know_yet);
+s_symbol_table* import_symbol_table(vector<string> lines);
 
 // finalizes each equ symbol, and looks for undefined symbols
 vector<s_error> finalize_symbol_table();

@@ -27,3 +27,7 @@ bool long_fits_in_12bits(long x);
 string char_to_string_hex(char x);
 
 string long_to_string_hex(long x);
+
+vector<string> split_string(const string& text, char delimiter);
+
+char string_hex_to_char(string hex);

@@ -1,6 +1,7 @@
 #include "section.hpp"
 #include "symbol_table.hpp"
 #include "misc.hpp"
+#include "asm.hpp"
 
 s_section* new_section()
 {
@@ -72,7 +73,45 @@ long get_section_offset(s_section* section)
     return section->bytes.size();
 }
 
-s_section* import_section(int i_dont_know_yet)
+s_section* find_section_by_name(string name)
 {
+    for (s_section& section : get_program()->section_list)
+    {
+        if (get_section_symbol(&section) == name)
+            return &section;
+    }
     return nullptr;
+}
+
+
+s_section* import_section(vector<string> lines)
+{
+    if (lines.size() == 0)
+        return nullptr;
+    s_section* section = new_section();
+    string section_name = lines[0].substr(1);
+
+    s_symbol_table_entry* symbol = create_new_symbol_entry(section_name);
+
+    symbol->binding = STB_LOCAL;
+    symbol->offset_or_value = 0;
+    symbol->section_symbol_table_index = get_symbol_entry_index_by_symbol(section_name);
+    symbol->state = STS_COMPLETE;
+    symbol->size = 0;
+    symbol->type = STT_SECTION;
+
+    section->sym_table_index = symbol->section_symbol_table_index;
+
+    for (string line : lines)
+    {
+        vector<string> chars = split_string(line, ' ');
+
+        for (string hex : chars)
+        {
+            char c = string_hex_to_char(hex);
+            section->bytes.push_back(c);
+        }
+    }
+
+    return section;
 }

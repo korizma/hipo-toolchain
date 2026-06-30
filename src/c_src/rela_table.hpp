@@ -40,7 +40,7 @@ s_rela_table_entry* create_new_rela_table_entry(s_section* section, long addend,
 string rela_table_to_string(s_rela_table* rela_table);
 
 // signature not final yet
-s_rela_table* import_rela_table(int i_dont_know_yet);
+s_rela_table* import_rela_table(vector<string> lines);
 
 // executes all relocations for this symbol
 void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol);

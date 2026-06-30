@@ -38,5 +38,6 @@ string section_to_string(s_section* section);
 // returns the section offset
 long get_section_offset(s_section* section);
 
-// signature not final yet
-s_section* import_section(int i_dont_know_yet);
+s_section* import_section(vector<string> lines);
+
+s_section* find_section_by_name(string name);

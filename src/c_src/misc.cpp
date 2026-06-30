@@ -1,4 +1,6 @@
 #include "misc.hpp"
+#include <sstream>
+
 
 using namespace std;
 
@@ -67,6 +69,32 @@ string long_to_string_hex(long x)
         char byte = (x >> (i * 8)) & 0xFF;
         result += hex_chars[(byte >> 4) & 0x0F];
         result += hex_chars[byte & 0x0F];
+    }
+    return result;
+}
+
+vector<string> split_string(const string& text, char delimiter) {
+    vector<string> parts;
+    istringstream stream(text);
+
+    string part;
+    while (getline(stream, part, delimiter)) {
+        parts.push_back(part);
+    }
+
+    return parts;
+}
+
+
+char string_hex_to_char(string hex)
+{
+    string hex_chars = "0123456789ABCDEF";
+    char result = 0;
+    for (int i = 0; i < 2; i++)
+    {
+        char c = hex[i];
+        int value = hex_chars.find(c);
+        result = (result << 4) | value;
     }
     return result;
 }

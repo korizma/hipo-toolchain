@@ -264,3 +264,48 @@ void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section,
     new_mem_reg_sym.instruction = instruction;
     symbol->mem_reg_sym_list.push_back(new_mem_reg_sym);
 }
+
+//  0     1    2       3     4    5    6
+// "Num\tValue\tSize\tType\tBind\tNdx\tName";
+s_symbol_table_entry import_symbol_table_entry(string line)
+{
+    vector<string> parts = split_string(line, '\t');
+
+    s_symbol_table_entry entry;
+    if (parts.size() != 7)
+        return entry;
+
+    if (parts[3] == "SCTN")
+        entry.type = STT_SECTION;
+    if (parts[3] == "NOTYP")
+        entry.type = STT_NOTYPE;
+
+    entry.offset_or_value = stoi(parts[1], nullptr, 10);
+    entry.section_symbol_table_index = stoi(parts[5], nullptr, 10);
+    entry.size = stoi(parts[2], nullptr, 10);
+    entry.name = parts[6];
+
+    if (parts[3] == "LOC")
+        entry.binding = STB_LOCAL;
+    if (parts[3] == "GLOB")
+        entry.binding = STB_GLOBAL;
+
+    return entry;
+}
+
+s_symbol_table* import_symbol_table(vector<string> lines)
+{
+    string header = lines[0];
+    if (lines.size() < 3 || header != "#.symtab" || lines[1] != "Num\tValue\tSize\tType\tBind\tNdx\tName")
+        return NULL;
+    
+    s_symbol_table* sym_table = new s_symbol_table();
+
+    for (int i = 2; i < lines.size(); i++)
+    {
+        s_symbol_table_entry entry = import_symbol_table_entry(lines[i]);
+        sym_table->entries.push_back(entry);
+    }
+    return sym_table;
+}
+
