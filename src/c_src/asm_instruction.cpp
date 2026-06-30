@@ -209,7 +209,7 @@ s_error handle_push(s_asm_instruction* instruction)
     machine_instr.modifier = 0b0000;        // modification for mem32[A + B + D] <= C
     machine_instr.reg_a = ASM_REG_SP;
     machine_instr.reg_b = 0;
-    machine_instr.reg_c = 0;
+    machine_instr.reg_c = instruction->reg1;
     machine_instr.displacement = 0;         
 
     write_machine_instr_to_section(curr_section, machine_instr);
@@ -278,8 +278,8 @@ s_error handle_sub(s_asm_instruction* instruction)
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
     machine_instr.modifier = 0b0001;         // modification for subtraction, A <= B - C
     machine_instr.reg_a = instruction->reg2;
-    machine_instr.reg_b = instruction->reg1;
-    machine_instr.reg_c = instruction->reg2;
+    machine_instr.reg_b = instruction->reg2;
+    machine_instr.reg_c = instruction->reg1;
     machine_instr.displacement = 0;         
 
     write_machine_instr_to_section(curr_section, machine_instr);
@@ -312,8 +312,8 @@ s_error handle_div(s_asm_instruction* instruction)
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
     machine_instr.modifier = 0b0011;         // modification for division, A <= B / C
     machine_instr.reg_a = instruction->reg2;
-    machine_instr.reg_b = instruction->reg1;
-    machine_instr.reg_c = instruction->reg2;
+    machine_instr.reg_b = instruction->reg2;
+    machine_instr.reg_c = instruction->reg1;
     machine_instr.displacement = 0;         
 
     write_machine_instr_to_section(curr_section, machine_instr);

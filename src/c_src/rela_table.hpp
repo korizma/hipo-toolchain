@@ -47,3 +47,6 @@ void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol);
 
 // updates the entries for the symbol
 void rela_table_symbol_update(s_symbol_table_entry* symbol);
+
+// writes the relocation
+void write_rela_table_entry(s_rela_table_entry* entry, s_section* section);

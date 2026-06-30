@@ -93,6 +93,10 @@ bool assemble_program_to_file(string filename)
     string content = program_to_string();
 
     file << content;
+
+    file.close();
+
+    cout << "Assembled to file: " << filename << endl;
     return true;
 }
 
@@ -120,23 +124,26 @@ bool assemble_lines()
         }
     }
 
+    if (has_errors)
+        return false;
+
     vector<s_error> symbol_table_errors = finalize_symbol_table();
 
     for (s_error error : symbol_table_errors)
     {
-        has_errors = true;
         cout << error_to_string(error) << endl;
+        return false;
     }
 
     vector<s_error> trampoline_errors = write_trampolines();
 
     for (s_error error : trampoline_errors)
     {
-        has_errors = true;
         cout << error_to_string(error) << endl;
+        return false;
     }
 
-    return !has_errors;
+    return true;
 }
 
 string program_to_string()

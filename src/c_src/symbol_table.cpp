@@ -144,9 +144,19 @@ vector<s_error> _finalize_equ_symbols_symbol_table()
         if (symbol.state == STS_EQU)
         {
             equ_set_symbol_indexes(symbol.expression);
-            simplify_expression(symbol.expression);
 
+            if (symbol.expression->undefined_symbol_exists)
+            {
+                errs.push_back(new_error(ERR_UNDEFINED_SYM, symbol.expression->symbol[0]));
+                continue;
+            }
+            simplify_expression(symbol.expression);
             
+            if (symbol.expression->undefined_symbol_exists)
+            {
+                errs.push_back(new_error(ERR_UNDEFINED_SYM, symbol.expression->symbol[0]));
+                continue;
+            }
 
             if (symbol.expression->symbol.size() == 0)
             {
@@ -172,9 +182,8 @@ vector<s_error> _finalize_equ_symbols_symbol_table()
     return errs;
 }
 
-vector<s_error> _rela_equ_updating()
+void _rela_equ_updating()
 {
-    vector<s_error> errs;
     for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
     {
         if (symbol.state == STS_EQU)
@@ -191,7 +200,6 @@ vector<s_error> _rela_equ_updating()
             }
         }
     }
-    return errs;
 }
 
 vector<s_error> _check_equ_mem_reg_sym_addressing()
@@ -205,7 +213,10 @@ vector<s_error> _check_equ_mem_reg_sym_addressing()
             {
                 if (symbol.expression->symbol.size() == 0)
                 {
-                    write_to_lower_12b(rs.section->bytes, rs.offset, symbol.offset_or_value);
+                    if (long_fits_in_12bits(symbol.offset_or_value))
+                        write_to_lower_12b(rs.section->bytes, rs.offset, symbol.offset_or_value);
+                    else
+                        errs.push_back(new_error(ERR_SYMBOL_TOO_LARGE_LS, symbol.name));
                 }
                 else
                 {
@@ -226,14 +237,23 @@ vector<s_error> _check_equ_mem_reg_sym_addressing()
 
 vector<s_error> finalize_symbol_table()
 {
-    vector<s_error> undefined_symbol_errs = _find_undefined_symbols_symbol_table();
-    vector<s_error> equ_symbol_errs = _finalize_equ_symbols_symbol_table();
-    vector<s_error> mem_reg_sym_errs = _check_equ_mem_reg_sym_addressing();
+    vector<s_error> errs = _find_undefined_symbols_symbol_table();
+    if (errs.size() != 0)
+        return errs;
+    
+    errs = _finalize_equ_symbols_symbol_table();
+    if (errs.size() != 0)
+        return errs;
 
-    undefined_symbol_errs.insert(undefined_symbol_errs.end(), equ_symbol_errs.begin(), equ_symbol_errs.end());
-    undefined_symbol_errs.insert(undefined_symbol_errs.end(), mem_reg_sym_errs.begin(), mem_reg_sym_errs.end());
 
-    return undefined_symbol_errs;
+    errs = _check_equ_mem_reg_sym_addressing();
+    if (errs.size() != 0)
+            return errs;
+
+    _rela_equ_updating();
+    _update_rela_table_for_symbols_symbol_table();
+
+    return {};
 }
 
 void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset, s_asm_instruction* instruction)

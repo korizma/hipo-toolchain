@@ -42,3 +42,7 @@ s_error write_trampoline_entry(s_trampoline_entry* entry);
 
 // writes all of the trampoline entries, returns all error msgs
 vector<s_error> write_trampolines();
+
+//gets the location of the trampoline if it exists already
+long get_trampoline_location_if_exists_literal(long literal);
+long get_trampoline_location_if_exists_symbol(long symbol_index);

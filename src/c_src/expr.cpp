@@ -1,6 +1,8 @@
 #include "expr.hpp"
 #include "symbol_table.hpp"
 #include <stdlib.h>
+#include <unordered_map>
+#include <utility>
 
 using namespace std;
 
@@ -17,20 +19,46 @@ s_expr* new_expression()
 
 void simplify_expression(s_expr* expression)
 {
-    vector<string> symbols;
-    vector<long> coeffs;
+    unordered_map<long, pair<s_symbol_table_entry*, long>> section_to_symbol_coeff;
 
-    for (int i = 0; i < expression->symbol.size(); i++)
+    for (int i = 0; i < expression->coeff.size(); i++)
     {
-        if (expression->coeff[i] == 0)
-            continue;
+        s_symbol_table_entry* symbol_entry = get_symbol_entry_index(expression->symbol_index[i]);
+        long coeff = expression->coeff[i];
 
-        symbols.push_back(expression->symbol[i]);
-        coeffs.push_back(expression->coeff[i]);
+        if (symbol_entry->state == STS_EQU)
+        {
+            expression->undefined_symbol_exists = true;
+            expression->symbol[0] = symbol_entry->name;
+            return;
+        }
+
+        if (section_to_symbol_coeff.find(symbol_entry->section_symbol_table_index) == section_to_symbol_coeff.end())
+        {
+            section_to_symbol_coeff[symbol_entry->section_symbol_table_index] = make_pair(symbol_entry, coeff); 
+        }
+        else
+        {
+            long offset_diff = section_to_symbol_coeff[symbol_entry->section_symbol_table_index].first->offset_or_value - symbol_entry->offset_or_value;
+
+            section_to_symbol_coeff[symbol_entry->section_symbol_table_index].second += coeff;
+            expression->integer_value -= offset_diff * coeff;
+        }
     }
 
-    expression->symbol = symbols;
-    expression->coeff = coeffs;
+    expression->coeff.clear();
+    expression->symbol.clear();
+    expression->symbol_index.clear();
+
+    for (const auto& [key, value] : section_to_symbol_coeff) 
+    {
+        if (value.second == 0)
+            continue;
+
+        expression->coeff.push_back(value.second);
+        expression->symbol_index.push_back(get_symbol_entry_index_by_symbol(value.first->name));
+        expression->symbol.push_back(value.first->name);
+    }   
 }
 
 bool expression_is_valid(s_expr* expression)
@@ -67,6 +95,7 @@ void equ_set_symbol_indexes(s_expr* expression)
         if (indx == -1)
         {
             expression->undefined_symbol_exists = true;
+            expression->symbol[0] = symbol;
             return;
         }
 

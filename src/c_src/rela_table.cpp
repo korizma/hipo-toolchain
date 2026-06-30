@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include "symbol_table.hpp"
 #include "misc.hpp"
+#include "asm.hpp"
 
 using namespace std;
 
@@ -79,11 +80,68 @@ s_rela_table* import_rela_table(int i_dont_know_yet)
 
 void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol)
 {
+    long symbol_index = get_symbol_entry_index_by_symbol(symbol->name);
+    for (s_section& section : get_program()->section_list)
+    {
+        if (!section.has_rela)
+            continue;
 
+        s_rela_table* rela_table = section.rela_table;
+
+        vector<int> to_remove;
+        for (int i = 0; i < rela_table->entries.size(); i++)
+        {
+            s_rela_table_entry* entry = &rela_table->entries[i];
+
+            if (entry->symbol_symbol_table_index == symbol_index)
+            {
+                to_remove.push_back(i);
+                write_rela_table_entry(entry, &section);
+            }
+        }
+
+        for (int i = to_remove.size()-1; i >= 0; i--)
+        {
+            rela_table->entries.erase(rela_table->entries.begin() + to_remove[i]);
+        }
+    }
 }
 
 void rela_table_symbol_update(s_symbol_table_entry* symbol)
 {
-    
+    long symbol_index = get_symbol_entry_index_by_symbol(symbol->name);
+    for (s_section section : get_program()->section_list)
+    {
+        if (!section.has_rela)
+            continue;
+
+        s_rela_table* rela_table = section.rela_table;
+
+        for (int i = 0; i < rela_table->entries.size(); i++)
+        {
+            s_rela_table_entry* entry = &rela_table->entries[i];
+
+            if (symbol->binding == STB_LOCAL && entry->symbol_symbol_table_index == symbol_index)
+            {
+                entry->addend = 0;
+                entry->offset_in_section = symbol->offset_or_value;
+                entry->symbol_symbol_table_index = symbol->section_symbol_table_index;
+            }
+        }
+    }
 }
 
+
+void write_rela_table_entry(s_rela_table_entry* entry, s_section* section)
+{
+    s_symbol_table_entry* symbol = get_symbol_entry_index(entry->symbol_symbol_table_index);
+    if (entry->relocation_type == R_HIPO_32)
+    {
+        vector<char> bytes = int_to_4_bytes(symbol->offset_or_value);
+        section->bytes[entry->offset_in_section + 0] = bytes[0];
+        section->bytes[entry->offset_in_section + 1] = bytes[1];
+        section->bytes[entry->offset_in_section + 2] = bytes[2];
+        section->bytes[entry->offset_in_section + 3] = bytes[3];
+    }
+    // i dont think im ever using the R_HIPO_12 relocation
+}

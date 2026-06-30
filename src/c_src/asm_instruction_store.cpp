@@ -83,7 +83,7 @@ s_error _handle_st_mem_sym(s_asm_instruction* instruction)
 
     write_machine_instr_to_section(curr_section, machine_instr);
 
-    add_literal_trampoline_entry(curr_section, section_offset+2, section_offset, symbol_index);
+    add_symbol_trampoline_entry(curr_section, section_offset+2, section_offset, symbol_index);
 
     return new_no_error();
 }
