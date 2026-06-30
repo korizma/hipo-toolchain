@@ -7,7 +7,7 @@
 #include "rela_table.hpp"
 
 //  adds a literal trampoline entry for the described section
-void add_literal_trampoline_entry(s_section* section, long section_offset, long referent_offset, long literal)
+void add_literal_trampoline_entry(s_program* program, s_section* section, long section_offset, long referent_offset, long literal)
 {
     s_trampoline_entry entry;
     entry.literal = literal;
@@ -16,11 +16,11 @@ void add_literal_trampoline_entry(s_section* section, long section_offset, long 
     entry.section = section;
     entry.type = TRMP_LIT;
 
-    get_trampoline()->entries.push_back(entry);
+    get_trampoline(program)->entries.push_back(entry);
 }
 
 // adds a symbol trampoline entry for the described section
-void add_symbol_trampoline_entry(s_section* section, long section_offset, long referent_offset, long symbol_index)
+void add_symbol_trampoline_entry(s_program* program, s_section* section, long section_offset, long referent_offset, long symbol_index)
 {
     s_trampoline_entry entry;
     entry.section_offset = section_offset;
@@ -29,14 +29,14 @@ void add_symbol_trampoline_entry(s_section* section, long section_offset, long r
     entry.type = TRMP_SYM;
     entry.symbol_symbol_table_index = symbol_index;
 
-    get_trampoline()->entries.push_back(entry);
+    get_trampoline(program)->entries.push_back(entry);
 }
 
-s_error write_trampoline_entry(s_trampoline_entry* entry)
+s_error write_trampoline_entry(s_program* program, s_trampoline_entry* entry)
 {
     if (entry->type == TRMP_LIT)
     {
-        long trampoline_location = get_trampoline_location_if_exists_literal(entry->literal);
+        long trampoline_location = get_trampoline_location_if_exists_literal(program, entry->literal);
 
         if (trampoline_location == -1)
             entry->trampoline_location = get_section_offset(entry->section);
@@ -62,7 +62,7 @@ s_error write_trampoline_entry(s_trampoline_entry* entry)
         // for later
         // case if the symbol is EQU and has value less than 12bits, we can just put that as displacement
 
-        s_symbol_table_entry* symbol = get_symbol_entry_index(entry->symbol_symbol_table_index);
+        s_symbol_table_entry* symbol = get_symbol_entry_index(get_symbol_table(program), entry->symbol_symbol_table_index);
 
         if (long_fits_in_12bits(symbol->offset_or_value) && symbol->expression != 0)
         {
@@ -71,7 +71,7 @@ s_error write_trampoline_entry(s_trampoline_entry* entry)
         }
         else
         {
-            long trampoline_location = get_trampoline_location_if_exists_symbol(entry->symbol_symbol_table_index);
+            long trampoline_location = get_trampoline_location_if_exists_symbol(program, entry->symbol_symbol_table_index);
 
             if (trampoline_location != -1)
             {
@@ -110,14 +110,14 @@ s_error write_trampoline_entry(s_trampoline_entry* entry)
     return new_no_error();
 }
 
-vector<s_error> write_trampolines()
+vector<s_error> write_trampolines(s_program* program)
 {
-    s_trampoline* trampoline = get_trampoline();
+    s_trampoline* trampoline = get_trampoline(program);
     vector<s_error> errors;
 
     for (s_trampoline_entry entry : trampoline->entries)
     {
-        s_error error = write_trampoline_entry(&entry);
+        s_error error = write_trampoline_entry(program, &entry);
         if (!error.no_error)
             errors.push_back(error);
     }
@@ -126,9 +126,9 @@ vector<s_error> write_trampolines()
 }
 
 
-long get_trampoline_location_if_exists_literal(long literal)
+long get_trampoline_location_if_exists_literal(s_program* program, long literal)
 {
-    for (s_trampoline_entry entry : get_trampoline()->entries)
+    for (s_trampoline_entry entry : get_trampoline(program)->entries)
     {
         if (entry.literal == literal && entry.trampoline_location != 0)
             return entry.trampoline_location;
@@ -136,9 +136,9 @@ long get_trampoline_location_if_exists_literal(long literal)
     return -1;
 }
 
-long get_trampoline_location_if_exists_symbol(long symbol_index)
+long get_trampoline_location_if_exists_symbol(s_program* program, long symbol_index)
 {
-    for (s_trampoline_entry entry : get_trampoline()->entries)
+    for (s_trampoline_entry entry : get_trampoline(program)->entries)
     {
         if (entry.symbol_symbol_table_index == symbol_index && entry.trampoline_location != 0)
             return entry.trampoline_location;

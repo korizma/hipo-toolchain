@@ -5,6 +5,7 @@
 
 struct s_section;
 struct s_error;
+struct s_program;
 
 using namespace std;
 
@@ -32,17 +33,17 @@ typedef struct s_trampoline
 } s_trampoline;
 
 //  adds a literal trampoline entry for the described section
-void add_literal_trampoline_entry(s_section* section, long section_offset, long referent_offset, long literal);
+void add_literal_trampoline_entry(s_program* program, s_section* section, long section_offset, long referent_offset, long literal);
 
 // adds a symbol trampoline entry for the described section
-void add_symbol_trampoline_entry(s_section* section, long section_offset, long referent_offset, long symbol_index);
+void add_symbol_trampoline_entry(s_program* program, s_section* section, long section_offset, long referent_offset, long symbol_index);
 
 // writes one trampoline entry, returns an error msg
-s_error write_trampoline_entry(s_trampoline_entry* entry);
+s_error write_trampoline_entry(s_program* program, s_trampoline_entry* entry);
 
 // writes all of the trampoline entries, returns all error msgs
-vector<s_error> write_trampolines();
+vector<s_error> write_trampolines(s_program* program);
 
 //gets the location of the trampoline if it exists already
-long get_trampoline_location_if_exists_literal(long literal);
-long get_trampoline_location_if_exists_symbol(long symbol_index);
+long get_trampoline_location_if_exists_literal(s_program* program, long literal);
+long get_trampoline_location_if_exists_symbol(s_program* program, long symbol_index);

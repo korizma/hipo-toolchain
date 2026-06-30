@@ -7,19 +7,16 @@
 #include "misc.hpp"
 #include "rela_table.hpp"
 
-s_symbol_table_entry* get_symbol_entry_index(int index)
-{
-    s_symbol_table* table = get_symbol_table(); 
+s_symbol_table_entry* get_symbol_entry_index(s_symbol_table* table, int index)
+{ 
     if (table->entries.size() <= index)
         return NULL;
 
     return &table->entries[index];
 }
 
-s_symbol_table_entry* get_symbol_entry_symbol(string symbol)
+s_symbol_table_entry* get_symbol_entry_symbol(s_symbol_table* table, string symbol)
 {
-    s_symbol_table* table = get_symbol_table(); 
-
     for (int i = 0; i < table->entries.size(); i++)
     {
         if (table->entries[i].name == symbol)
@@ -28,10 +25,8 @@ s_symbol_table_entry* get_symbol_entry_symbol(string symbol)
     return NULL;
 }
 
-s_symbol_table_entry* create_new_symbol_entry(string symbol)
+s_symbol_table_entry* create_new_symbol_entry(s_symbol_table* table, string symbol)
 {
-    s_symbol_table* table = get_symbol_table(); 
-
     for (s_symbol_table_entry& entry : table->entries)
     {
         if (entry.name == symbol)
@@ -46,13 +41,11 @@ s_symbol_table_entry* create_new_symbol_entry(string symbol)
     return &table->entries.back();
 }
 
-s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol)
+s_symbol_table_entry* get_and_create_new_symbol_entry(s_symbol_table* table, string symbol)
 {
-    s_symbol_table_entry* entry = create_new_symbol_entry(symbol);
+    s_symbol_table_entry* entry = create_new_symbol_entry(table, symbol);
 
     if (entry != NULL) return entry;
-    
-    s_symbol_table* table = get_symbol_table(); 
 
     for (int i = 0; i < table->entries.size(); i++)
     {
@@ -63,10 +56,8 @@ s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol)
     return NULL;
 }
 
-long get_symbol_entry_index_by_symbol(string symbol)
+long get_symbol_entry_index_by_symbol(s_symbol_table* table, string symbol)
 {    
-    s_symbol_table* table = get_symbol_table(); 
-
     for (int i = 0; i < table->entries.size(); i++)
     {
         s_symbol_table_entry entry = table->entries[i];
@@ -99,26 +90,26 @@ string symbol_table_entry_to_string(s_symbol_table_entry entry, long index)
     return num + "\t" + value + "\t" + size + "\t" + type + "\t" + bind + "\t" + ndx + "\t" + name;
 }
 
-string symbol_table_to_string()
+string symbol_table_to_string(s_symbol_table* table)
 {
     string name = "#.symtab";
     string header = "Num\tValue\tSize\tType\tBind\tNdx\tName";
 
     string final_string = name + "\n" + header + "\n";
 
-    for (int i = 0; i < get_symbol_table()->entries.size(); i++)
+    for (int i = 0; i < table->entries.size(); i++)
     {
-        s_symbol_table_entry entry = get_symbol_table()->entries[i];
+        s_symbol_table_entry entry = table->entries[i];
         final_string += symbol_table_entry_to_string(entry, i) + "\n";
     }
 
     return final_string;
 }
 
-vector<s_error> _find_undefined_symbols_symbol_table()
+vector<s_error> _find_undefined_symbols_symbol_table(s_symbol_table* table)
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : table->entries)
     {
         if (symbol.state != STS_COMPLETE && symbol.state != STS_EQU)
         {
@@ -128,29 +119,29 @@ vector<s_error> _find_undefined_symbols_symbol_table()
     return errs;
 }
 
-void _update_rela_table_for_symbols_symbol_table()
+void _update_rela_table_for_symbols_symbol_table(s_program* program, s_symbol_table* table)
 {
-    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : table->entries)
     {
-        rela_table_symbol_update(&symbol);
+        rela_table_symbol_update(get_symbol_table(program), program->section_list, &symbol);
     }
 }
 
-vector<s_error> _finalize_equ_symbols_symbol_table()
+vector<s_error> _finalize_equ_symbols_symbol_table(s_program* program, s_symbol_table* table)
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : table->entries)
     {
         if (symbol.state == STS_EQU)
         {
-            equ_set_symbol_indexes(symbol.expression);
+            equ_set_symbol_indexes(program, symbol.expression);
 
             if (symbol.expression->undefined_symbol_exists)
             {
                 errs.push_back(new_error(ERR_UNDEFINED_SYM, symbol.expression->symbol[0]));
                 continue;
             }
-            simplify_expression(symbol.expression);
+            simplify_expression(program, symbol.expression);
             
             if (symbol.expression->undefined_symbol_exists)
             {
@@ -165,7 +156,7 @@ vector<s_error> _finalize_equ_symbols_symbol_table()
             }
             else if (symbol.expression->symbol.size() == 1)
             {
-                s_symbol_table_entry* ref = get_symbol_entry_index(symbol.expression->symbol_index[0]);
+                s_symbol_table_entry* ref = get_symbol_entry_index(table, symbol.expression->symbol_index[0]);
                 long coeff = symbol.expression->coeff[0];
 
                 symbol.section_symbol_table_index = ref->section_symbol_table_index;
@@ -182,30 +173,30 @@ vector<s_error> _finalize_equ_symbols_symbol_table()
     return errs;
 }
 
-void _rela_equ_updating()
+void _rela_equ_updating(s_program* program, s_symbol_table* table)
 {
-    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : table->entries)
     {
         if (symbol.state == STS_EQU)
         {
             // if its only a literal, then find all rela and do them
             if (symbol.expression->symbol.size() == 0)
             {
-                rela_table_symbol_execute_and_remove(&symbol);
+                rela_table_symbol_execute_and_remove(get_symbol_table(program), program->section_list, &symbol);
             }
             // if its not, then you need to edit the rela entries if the visibility is not global
             else if (symbol.binding == STB_LOCAL)
             {
-                rela_table_symbol_update(&symbol);
+                rela_table_symbol_update(get_symbol_table(program), program->section_list, &symbol);
             }
         }
     }
 }
 
-vector<s_error> _check_equ_mem_reg_sym_addressing()
+vector<s_error> _check_equ_mem_reg_sym_addressing(s_symbol_table* table)
 {
     vector<s_error> errs;
-    for (s_symbol_table_entry& symbol : get_symbol_table()->entries)
+    for (s_symbol_table_entry& symbol : table->entries)
     {
         if (symbol.state == STS_EQU)
         {
@@ -235,23 +226,24 @@ vector<s_error> _check_equ_mem_reg_sym_addressing()
     return errs;
 }
 
-vector<s_error> finalize_symbol_table()
+vector<s_error> finalize_symbol_table(s_program* program)
 {
-    vector<s_error> errs = _find_undefined_symbols_symbol_table();
+    s_symbol_table* table = get_symbol_table(program);
+    vector<s_error> errs = _find_undefined_symbols_symbol_table(table);
     if (errs.size() != 0)
         return errs;
     
-    errs = _finalize_equ_symbols_symbol_table();
+    errs = _finalize_equ_symbols_symbol_table(program, table);
     if (errs.size() != 0)
         return errs;
 
 
-    errs = _check_equ_mem_reg_sym_addressing();
+    errs = _check_equ_mem_reg_sym_addressing(table);
     if (errs.size() != 0)
             return errs;
 
-    _rela_equ_updating();
-    _update_rela_table_for_symbols_symbol_table();
+    _rela_equ_updating(program, table);
+    _update_rela_table_for_symbols_symbol_table(program, table);
 
     return {};
 }

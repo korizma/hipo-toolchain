@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
+#include <vector>
 #include "asm.hpp"
 #include "grammar.tab.h"
 
 using namespace std;
 
-
+vector<s_asm_line> lines;
 extern FILE *yyin;
 
 int yylex_destroy(void);
@@ -24,8 +25,6 @@ static string make_default_output_file(string input_file)
 
 int main(int argc, char **argv)
 {
-    init_program();
-
     string input_file;
     string output_file;
 
@@ -56,12 +55,10 @@ int main(int argc, char **argv)
     fclose(yyin);
     yylex_destroy();
 
-    if (!assemble_program_to_file(output_file)) {
+    if (!assemble_program_to_file(output_file, lines)) {
         fprintf(stderr, "Assembly failed.\n");
-        free_program();
         return 1;
     }
 
-    free_program();
     return 0;
 }

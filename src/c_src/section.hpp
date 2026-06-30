@@ -6,6 +6,8 @@
 using namespace std;
 
 struct s_rela_table; 
+struct s_program;
+struct s_symbol_table;
 
 typedef struct s_section
 {
@@ -21,7 +23,7 @@ typedef struct s_section
 s_section* new_section();
 
 // returns the name/symbol of the section form the symbol table
-string get_section_symbol(s_section* section);
+string get_section_symbol(s_symbol_table* symbol_table, s_section* section);
 
 // writes bytes to the section
 void write_bytes_to_section(s_section* section, vector<char> bytes);
@@ -33,11 +35,11 @@ void skip_bytes_in_section(s_section* section, long num_bytes);
 void bind_rela_table_to_section(s_section* section, s_rela_table* rela_table);
 
 // returns the string view of the section, used for final text file export
-string section_to_string(s_section* section);
+string section_to_string(s_program* program, s_section* section);
 
 // returns the section offset
 long get_section_offset(s_section* section);
 
-s_section* import_section(vector<string> lines);
+s_section* import_section(vector<string> lines, s_symbol_table* symbol_table);
 
-s_section* find_section_by_name(string name);
+s_section* find_section_by_name(vector<s_section>& section_list, s_symbol_table* symbol_table, string name);

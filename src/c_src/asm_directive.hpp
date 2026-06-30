@@ -7,6 +7,7 @@ using namespace std;
 
 struct s_expr;
 struct s_error;
+struct s_program;
 
 #define SL_SYM 0
 #define SL_LIT 1
@@ -59,15 +60,15 @@ typedef struct s_asm_directive
 s_asm_directive* new_asm_directive();
 
 // forwards the directive to a handler, returns error msg or ""
-s_error handle_asm_directive(s_asm_directive* directive);
+s_error handle_asm_directive(s_program* program, s_asm_directive* directive);
 
 // returns the asm_directive as a string
 string asm_directive_to_string(s_asm_directive* directive);
 
-s_error handle_global(s_asm_directive* directive);
-s_error handle_extern(s_asm_directive* directive);
-s_error handle_section(s_asm_directive* directive);
-s_error handle_word(s_asm_directive* directive);
-s_error handle_skip(s_asm_directive* directive);
-s_error handle_ascii(s_asm_directive* directive);
-s_error handle_equ(s_asm_directive* directive);
+s_error handle_global(s_program* program, s_asm_directive* directive);
+s_error handle_extern(s_program* program, s_asm_directive* directive);
+s_error handle_section(s_program* program, s_asm_directive* directive);
+s_error handle_word(s_program* program, s_asm_directive* directive);
+s_error handle_skip(s_program* program, s_asm_directive* directive);
+s_error handle_ascii(s_program* program, s_asm_directive* directive);
+s_error handle_equ(s_program* program, s_asm_directive* directive);

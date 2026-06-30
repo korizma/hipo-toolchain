@@ -9,9 +9,9 @@ s_asm_instruction* new_asm_instruction()
     return new s_asm_instruction();
 }
 
-s_error handle_asm_instruction(s_asm_instruction* instruction)
+s_error handle_asm_instruction(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
 
     if (curr_section == NULL)
         return new_error(ERR_LINE_OUTSIDE_SECTION);
@@ -20,82 +20,82 @@ s_error handle_asm_instruction(s_asm_instruction* instruction)
     switch (instruction->instruction)
     {
     case ASM_INSTR_HALT:
-        err = handle_halt(instruction);
+        err = handle_halt(program, instruction);
         break;
     case ASM_INSTR_INT:
-        err = handle_int(instruction);
+        err = handle_int(program, instruction);
         break;
     case ASM_INSTR_IRET:
-        err = handle_iret(instruction);
+        err = handle_iret(program, instruction);
         break;
     case ASM_INSTR_CALL:
-        err = handle_call(instruction);
+        err = handle_call(program, instruction);
         break;
     case ASM_INSTR_RET:
-        err = handle_ret(instruction);
+        err = handle_ret(program, instruction);
         break;
     case ASM_INSTR_PUSH:
-        err = handle_push(instruction);
+        err = handle_push(program, instruction);
         break;
     case ASM_INSTR_POP:
-        err = handle_pop(instruction);
+        err = handle_pop(program, instruction);
         break;
     case ASM_INSTR_JMP:
-        err = handle_jmp(instruction);
+        err = handle_jmp(program, instruction);
         break;
     case ASM_INSTR_BEQ:
-        err = handle_beq(instruction);
+        err = handle_beq(program, instruction);
         break;
     case ASM_INSTR_BNE:
-        err = handle_bne(instruction);
+        err = handle_bne(program, instruction);
         break;
     case ASM_INSTR_BGT:
-        err = handle_bgt(instruction);
+        err = handle_bgt(program, instruction);
         break;
     case ASM_INSTR_XCHG:
-        err = handle_xchg(instruction);
+        err = handle_xchg(program, instruction);
         break;
     case ASM_INSTR_ADD:
-        err = handle_add(instruction);
+        err = handle_add(program, instruction);
         break;
     case ASM_INSTR_SUB:
-        err = handle_sub(instruction);
+        err = handle_sub(program, instruction);
         break;
     case ASM_INSTR_MUL:
-        err = handle_mul(instruction);
+        err = handle_mul(program, instruction);
         break;
     case ASM_INSTR_DIV:
-        err = handle_div(instruction);
+        err = handle_div(program, instruction);
         break;
     case ASM_INSTR_NOT:
-        err = handle_not(instruction);
+        err = handle_not(program, instruction);
         break;
     case ASM_INSTR_AND:
-        err = handle_and(instruction);
+        err = handle_and(program, instruction);
         break;
     case ASM_INSTR_OR:
-        err = handle_or(instruction);
+        err = handle_or(program, instruction);
         break;
     case ASM_INSTR_XOR:
-        err = handle_xor(instruction);
+        err = handle_xor(program, instruction);
         break;
     case ASM_INSTR_SHL:
-        err = handle_shl(instruction);
+        err = handle_shl(program, instruction);
         break;
     case ASM_INSTR_SHR:
-        err = handle_shr(instruction);
+        err = handle_shr(program, instruction);
         break;
     case ASM_INSTR_LD:
-        err = handle_ld(instruction);
+        err = handle_ld(program, instruction);
         break;
     case ASM_INSTR_ST:
-        err = handle_st(instruction);
+        err = handle_st(program, instruction);
         break;
     case ASM_INSTR_CSRRD:
-        err = handle_csrrd(instruction);
+        err = handle_csrrd(program, instruction);
         break;
     case ASM_INSTR_CSRWR:
-        err = handle_csrwr(instruction);
+        err = handle_csrwr(program, instruction);
         break;
     
     default:
@@ -105,9 +105,9 @@ s_error handle_asm_instruction(s_asm_instruction* instruction)
     return err;
 }
 
-s_error handle_halt(s_asm_instruction* instruction)
+s_error handle_halt(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0;   // oc for HALT instruction
@@ -122,9 +122,9 @@ s_error handle_halt(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_int(s_asm_instruction* instruction)
+s_error handle_int(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 1;   // oc for INT instruction
@@ -139,11 +139,11 @@ s_error handle_int(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_iret(s_asm_instruction* instruction)
+s_error handle_iret(s_program* program, s_asm_instruction* instruction)
 {
     // iret <=> pop status, pop pc
     // if pc was popped first then status would never be popped
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     // pop status
@@ -169,10 +169,10 @@ s_error handle_iret(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_ret(s_asm_instruction* instruction)
+s_error handle_ret(s_program* program, s_asm_instruction* instruction)
 {
     // ret <=> pop pc
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     // pop pc
@@ -188,10 +188,10 @@ s_error handle_ret(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_push(s_asm_instruction* instruction)
+s_error handle_push(s_program* program, s_asm_instruction* instruction)
 {
     // push reg <=> sp = sp - 4, mem[sp] <= reg
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     // sp = sp - 4
@@ -217,10 +217,10 @@ s_error handle_push(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_pop(s_asm_instruction* instruction)
+s_error handle_pop(s_program* program, s_asm_instruction* instruction)
 {
     // pop reg <=> reg <= mem[SP], SP = SP + 4
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     // pop pc
@@ -236,9 +236,9 @@ s_error handle_pop(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_xchg(s_asm_instruction* instruction)
+s_error handle_xchg(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0100;   // oc for atomic data swap
@@ -253,9 +253,9 @@ s_error handle_xchg(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_add(s_asm_instruction* instruction)
+s_error handle_add(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
@@ -270,9 +270,9 @@ s_error handle_add(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_sub(s_asm_instruction* instruction)
+s_error handle_sub(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
@@ -287,9 +287,9 @@ s_error handle_sub(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_mul(s_asm_instruction* instruction)
+s_error handle_mul(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
@@ -304,9 +304,9 @@ s_error handle_mul(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_div(s_asm_instruction* instruction)
+s_error handle_div(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0101;   // oc for arithmetic operations
@@ -321,9 +321,9 @@ s_error handle_div(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_not(s_asm_instruction* instruction)
+s_error handle_not(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0110;   // oc for logical operations
@@ -338,9 +338,9 @@ s_error handle_not(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_and(s_asm_instruction* instruction)
+s_error handle_and(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0110;   // oc for logical operations
@@ -355,9 +355,9 @@ s_error handle_and(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_or(s_asm_instruction* instruction)
+s_error handle_or(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0110;   // oc for logical operations
@@ -372,9 +372,9 @@ s_error handle_or(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_xor(s_asm_instruction* instruction)
+s_error handle_xor(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0110;   // oc for logical operations
@@ -389,9 +389,9 @@ s_error handle_xor(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_shl(s_asm_instruction* instruction)
+s_error handle_shl(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0111;   // oc for shift operations
@@ -406,9 +406,9 @@ s_error handle_shl(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_shr(s_asm_instruction* instruction)
+s_error handle_shr(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b0111;   // oc for shift operations
@@ -423,9 +423,9 @@ s_error handle_shr(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_csrrd(s_asm_instruction* instruction)
+s_error handle_csrrd(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b1001;   // oc for loading operations
@@ -440,9 +440,9 @@ s_error handle_csrrd(s_asm_instruction* instruction)
     return new_no_error();
 }
 
-s_error handle_csrwr(s_asm_instruction* instruction)
+s_error handle_csrwr(s_program* program, s_asm_instruction* instruction)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
     machine_instr.operation_code = 0b1001;   // oc for loading operations

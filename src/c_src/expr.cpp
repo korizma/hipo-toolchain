@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <unordered_map>
 #include <utility>
+#include "asm.hpp"
 
 using namespace std;
 
@@ -17,13 +18,13 @@ s_expr* new_expression()
     return expression;
 }
 
-void simplify_expression(s_expr* expression)
+void simplify_expression(s_program* program, s_expr* expression)
 {
     unordered_map<long, pair<s_symbol_table_entry*, long>> section_to_symbol_coeff;
 
     for (int i = 0; i < expression->coeff.size(); i++)
     {
-        s_symbol_table_entry* symbol_entry = get_symbol_entry_index(expression->symbol_index[i]);
+        s_symbol_table_entry* symbol_entry = get_symbol_entry_index(get_symbol_table(program), expression->symbol_index[i]);
         long coeff = expression->coeff[i];
 
         if (symbol_entry->state == STS_EQU)
@@ -56,14 +57,14 @@ void simplify_expression(s_expr* expression)
             continue;
 
         expression->coeff.push_back(value.second);
-        expression->symbol_index.push_back(get_symbol_entry_index_by_symbol(value.first->name));
+        expression->symbol_index.push_back(get_symbol_entry_index_by_symbol(get_symbol_table(program), value.first->name));
         expression->symbol.push_back(value.first->name);
     }   
 }
 
-bool expression_is_valid(s_expr* expression)
+bool expression_is_valid(s_program *program, s_expr* expression)
 {
-    simplify_expression(expression);
+    simplify_expression(program, expression);
     return expression->symbol.size() <= 1;
 }
 
@@ -87,11 +88,11 @@ void add_symbol_to_expression(s_expr* expression, string symbol, int sign)
     expression->coeff.push_back(sign);
 }
 
-void equ_set_symbol_indexes(s_expr* expression)
+void equ_set_symbol_indexes(s_program* program, s_expr* expression)
 {
     for (string symbol : expression->symbol)
     {
-        long indx = get_symbol_entry_index_by_symbol(symbol);
+        long indx = get_symbol_entry_index_by_symbol(get_symbol_table(program), symbol);
         if (indx == -1)
         {
             expression->undefined_symbol_exists = true;

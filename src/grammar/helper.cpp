@@ -5,6 +5,8 @@
 
 using namespace std;
 
+extern vector<s_asm_line> lines;
+
 static s_asm_instruction* parser_new_instruction(char instruction)
 {
     s_asm_instruction* instr = new_asm_instruction();
@@ -137,7 +139,7 @@ s_parser_ls_operand* parser_new_ls_operand(char type, long literal, char* symbol
 
 void parser_add_label(char* label)
 {
-    add_label_to_program(label);
+    add_label_to_program(lines, label);
 }
 
 void parser_add_symbol_list_directive(char directive, s_symbol_list* symbols)
@@ -145,7 +147,7 @@ void parser_add_symbol_list_directive(char directive, s_symbol_list* symbols)
     s_asm_directive* dir = new_asm_directive();
     dir->directive = directive;
     dir->symbol_list = *symbols;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_section_directive(char* section)
@@ -153,7 +155,7 @@ void parser_add_section_directive(char* section)
     s_asm_directive* dir = new_asm_directive();
     dir->directive = ASM_DIR_SECTION;
     dir->section_symbol = section;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_word_directive(s_sym_lit_list* sym_lits)
@@ -161,7 +163,7 @@ void parser_add_word_directive(s_sym_lit_list* sym_lits)
     s_asm_directive* dir = new_asm_directive();
     dir->directive = ASM_DIR_WORD;
     dir->sym_lit_list = *sym_lits;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_skip_directive(long literal)
@@ -169,7 +171,7 @@ void parser_add_skip_directive(long literal)
     s_asm_directive* dir = new_asm_directive();
     dir->directive = ASM_DIR_SKIP;
     dir->skip_literal = literal;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_ascii_directive(char* ascii)
@@ -177,7 +179,7 @@ void parser_add_ascii_directive(char* ascii)
     s_asm_directive* dir = new_asm_directive();
     dir->directive = ASM_DIR_ASCII;
     dir->ascii_string = ascii;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_equ_directive(char* symbol, s_expr* expr)
@@ -186,27 +188,26 @@ void parser_add_equ_directive(char* symbol, s_expr* expr)
     dir->directive = ASM_DIR_EQU;
     dir->equ_symbol = symbol;
     dir->expr = expr;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_end_directive()
 {
     s_asm_directive* dir = new_asm_directive();
     dir->directive = ASM_DIR_END;
-    get_program()->lines_ended = true;
-    add_directive_to_program(dir);
+    add_directive_to_program(lines, dir);
 }
 
 void parser_add_no_operand_instruction(char instruction)
 {
-    add_instruction_to_program(parser_new_instruction(instruction));
+    add_instruction_to_program(lines, parser_new_instruction(instruction));
 }
 
 void parser_add_jump_instruction(char instruction, s_parser_jmp_operand* operand)
 {
     s_asm_instruction* instr = parser_new_instruction(instruction);
     parser_apply_jump_operand(instr, operand);
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_branch_instruction(char instruction, s_gpr_pair regs, s_parser_jmp_operand* operand)
@@ -215,14 +216,14 @@ void parser_add_branch_instruction(char instruction, s_gpr_pair regs, s_parser_j
     instr->reg1 = regs.reg1;
     instr->reg2 = regs.reg2;
     parser_apply_jump_operand(instr, operand);
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_single_gpr_instruction(char instruction, char reg)
 {
     s_asm_instruction* instr = parser_new_instruction(instruction);
     instr->reg1 = reg;
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_two_gpr_instruction(char instruction, s_gpr_pair regs)
@@ -230,7 +231,7 @@ void parser_add_two_gpr_instruction(char instruction, s_gpr_pair regs)
     s_asm_instruction* instr = parser_new_instruction(instruction);
     instr->reg1 = regs.reg1;
     instr->reg2 = regs.reg2;
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_ld_instruction(s_parser_ls_operand* operand, char reg)
@@ -238,7 +239,7 @@ void parser_add_ld_instruction(s_parser_ls_operand* operand, char reg)
     s_asm_instruction* instr = parser_new_instruction(ASM_INSTR_LD);
     instr->reg1 = reg;
     parser_apply_ls_operand(instr, operand);
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_st_instruction(char reg, s_parser_ls_operand* operand)
@@ -246,7 +247,7 @@ void parser_add_st_instruction(char reg, s_parser_ls_operand* operand)
     s_asm_instruction* instr = parser_new_instruction(ASM_INSTR_ST);
     instr->reg1 = reg;
     parser_apply_ls_operand(instr, operand);
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_csrrd_instruction(char csr, char reg)
@@ -254,7 +255,7 @@ void parser_add_csrrd_instruction(char csr, char reg)
     s_asm_instruction* instr = parser_new_instruction(ASM_INSTR_CSRRD);
     instr->control_reg = csr;
     instr->reg2 = reg;
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void parser_add_csrwr_instruction(char reg, char csr)
@@ -262,7 +263,7 @@ void parser_add_csrwr_instruction(char reg, char csr)
     s_asm_instruction* instr = parser_new_instruction(ASM_INSTR_CSRWR);
     instr->reg1 = reg;
     instr->control_reg = csr;
-    add_instruction_to_program(instr);
+    add_instruction_to_program(lines, instr);
 }
 
 void yyerror(const char *message)

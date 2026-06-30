@@ -60,9 +60,9 @@ string rela_table_entry_to_string(s_rela_table_entry entry)
     return offset + "\t" + type + "\t" + symbol + "\t" + addend;
 }
 
-string rela_table_to_string(s_rela_table* rela_table)
+string rela_table_to_string(s_symbol_table* symbol_table, s_rela_table* rela_table)
 {
-    string final_string = "#.rela." + get_symbol_entry_index(rela_table->section_symbol_table_index)->name + "\n";
+    string final_string = "#.rela." + get_symbol_entry_index(symbol_table, rela_table->section_symbol_table_index)->name + "\n";
 
     final_string += "Offset\tType\tSymbol\tAddend\n";
 
@@ -74,10 +74,10 @@ string rela_table_to_string(s_rela_table* rela_table)
 }
 
 
-void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol)
+void rela_table_symbol_execute_and_remove(s_symbol_table* symbol_table, vector<s_section>& section_list, s_symbol_table_entry* symbol)
 {
-    long symbol_index = get_symbol_entry_index_by_symbol(symbol->name);
-    for (s_section& section : get_program()->section_list)
+    long symbol_index = get_symbol_entry_index_by_symbol(symbol_table, symbol->name);
+    for (s_section& section : section_list)
     {
         if (!section.has_rela)
             continue;
@@ -92,7 +92,7 @@ void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol)
             if (entry->symbol_symbol_table_index == symbol_index)
             {
                 to_remove.push_back(i);
-                write_rela_table_entry(entry, &section);
+                write_rela_table_entry(symbol_table, entry, &section);
             }
         }
 
@@ -103,10 +103,10 @@ void rela_table_symbol_execute_and_remove(s_symbol_table_entry* symbol)
     }
 }
 
-void rela_table_symbol_update(s_symbol_table_entry* symbol)
+void rela_table_symbol_update(s_symbol_table* symbol_table, vector<s_section>& section_list, s_symbol_table_entry* symbol)
 {
-    long symbol_index = get_symbol_entry_index_by_symbol(symbol->name);
-    for (s_section section : get_program()->section_list)
+    long symbol_index = get_symbol_entry_index_by_symbol(symbol_table, symbol->name);
+    for (s_section section : section_list)
     {
         if (!section.has_rela)
             continue;
@@ -128,9 +128,9 @@ void rela_table_symbol_update(s_symbol_table_entry* symbol)
 }
 
 
-void write_rela_table_entry(s_rela_table_entry* entry, s_section* section)
+void write_rela_table_entry(s_symbol_table* symbol_table, s_rela_table_entry* entry, s_section* section)
 {
-    s_symbol_table_entry* symbol = get_symbol_entry_index(entry->symbol_symbol_table_index);
+    s_symbol_table_entry* symbol = get_symbol_entry_index(symbol_table, entry->symbol_symbol_table_index);
     if (entry->relocation_type == R_HIPO_32)
     {
         vector<char> bytes = int_to_4_bytes(symbol->offset_or_value);
@@ -158,7 +158,7 @@ s_rela_table_entry import_rela_table_entry(string text)
     return entry;
 }
 
-s_rela_table* import_rela_table(vector<string> lines)
+s_rela_table* import_rela_table(vector<string> lines, s_symbol_table* symbol_table, vector<s_section>& section_list)
 {
     string header = lines[0];
     if (lines.size() < 3 || header.substr(0, 7) != "#.rela." || lines[1] != "Offset\tType\tSymbol\tAddend")
@@ -166,8 +166,8 @@ s_rela_table* import_rela_table(vector<string> lines)
     string section_name = header.substr(7);
 
     s_rela_table* rela_table = new s_rela_table();
-    rela_table->section_symbol_table_index = get_symbol_entry_index_by_symbol(section_name);
-    s_section* section = find_section_by_name(section_name);
+    rela_table->section_symbol_table_index = get_symbol_entry_index_by_symbol(symbol_table, section_name);
+    s_section* section = find_section_by_name(section_list, symbol_table, section_name);
     section->has_rela = true;
     section->rela_table = rela_table;
     

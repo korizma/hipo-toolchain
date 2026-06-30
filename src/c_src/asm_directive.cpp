@@ -12,31 +12,31 @@ s_asm_directive* new_asm_directive()
     return new s_asm_directive();
 }
 
-s_error handle_asm_directive(s_asm_directive* directive)
+s_error handle_asm_directive(s_program* program, s_asm_directive* directive)
 {
     s_error err;
     switch (directive->directive)
     {
     case ASM_DIR_ASCII:
-        err = handle_ascii(directive);
+        err = handle_ascii(program, directive);
         break;
     case ASM_DIR_EQU:
-        err = handle_equ(directive);
+        err = handle_equ(program, directive);
         break;
     case ASM_DIR_EXTERN:
-        err = handle_extern(directive);
+        err = handle_extern(program, directive);
         break;
     case ASM_DIR_GLOBAL:
-        err = handle_global(directive);
+        err = handle_global(program, directive);
         break;
     case ASM_DIR_SECTION:
-        err = handle_section(directive);
+        err = handle_section(program, directive);
         break;
     case ASM_DIR_SKIP:
-        err = handle_skip(directive);
+        err = handle_skip(program, directive);
         break;
     case ASM_DIR_WORD:
-        err = handle_word(directive);
+        err = handle_word(program, directive);
         break;
     case ASM_DIR_END:
         err = new_no_error();
@@ -47,11 +47,11 @@ s_error handle_asm_directive(s_asm_directive* directive)
 }
 
 
-s_error handle_global(s_asm_directive* directive)
+s_error handle_global(s_program* program, s_asm_directive* directive)
 {
     for (string symbol_name : directive->symbol_list)
     {
-        s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(symbol_name);
+        s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(get_symbol_table(program), symbol_name);
 
         symbol->binding = STB_GLOBAL;
         if (symbol->state != STS_COMPLETE)
@@ -61,11 +61,11 @@ s_error handle_global(s_asm_directive* directive)
     return new_no_error();
 }
 
-s_error handle_extern(s_asm_directive* directive)
+s_error handle_extern(s_program* program, s_asm_directive* directive)
 {
     for (string symbol_name : directive->symbol_list)
     {
-        s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(symbol_name);
+        s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(get_symbol_table(program), symbol_name);
 
         if (symbol->state == STS_COMPLETE)
             return new_error(ERR_DOUBLE_SYM_DECL, symbol_name);
@@ -81,18 +81,18 @@ s_error handle_extern(s_asm_directive* directive)
     return new_no_error();
 }
 
-s_error handle_section(s_asm_directive* directive)
+s_error handle_section(s_program* program, s_asm_directive* directive)
 {
-    s_symbol_table_entry* symbol = get_symbol_entry_symbol(directive->section_symbol);
+    s_symbol_table_entry* symbol = get_symbol_entry_symbol(get_symbol_table(program), directive->section_symbol);
 
     if (symbol != NULL)
         return new_error(ERR_DOUBLE_SYM_DECL, directive->section_symbol);
 
-    symbol = create_new_symbol_entry(directive->section_symbol);
+    symbol = create_new_symbol_entry(get_symbol_table(program), directive->section_symbol);
 
     symbol->binding = STB_LOCAL;
     symbol->offset_or_value = 0;
-    symbol->section_symbol_table_index = get_symbol_entry_index_by_symbol(directive->section_symbol);
+    symbol->section_symbol_table_index = get_symbol_entry_index_by_symbol(get_symbol_table(program), directive->section_symbol);
     symbol->state = STS_COMPLETE;
     symbol->size = 0;
     symbol->type = STT_SECTION;
@@ -100,14 +100,14 @@ s_error handle_section(s_asm_directive* directive)
     s_section* section = new_section();
     section->sym_table_index = symbol->section_symbol_table_index;
 
-    add_section_to_program(section);
+    add_section_to_program(program, section);
 
     return new_no_error();
 }
 
-s_error handle_word(s_asm_directive* directive)
+s_error handle_word(s_program* program, s_asm_directive* directive)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
 
     if (curr_section == NULL)
         return new_error(ERR_LINE_OUTSIDE_SECTION);
@@ -116,12 +116,12 @@ s_error handle_word(s_asm_directive* directive)
     {
         if (sym_lit.type == SL_SYM)
         {
-            s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(sym_lit.symbol);
+            s_symbol_table_entry* symbol = get_and_create_new_symbol_entry(get_symbol_table(program), sym_lit.symbol);
 
             if (symbol->state == 0) 
                 symbol->state = STS_REFERENCE;
 
-            long sym_index = get_symbol_entry_index_by_symbol(sym_lit.symbol);
+            long sym_index = get_symbol_entry_index_by_symbol(get_symbol_table(program), sym_lit.symbol);
 
             create_new_rela_table_entry(curr_section, 0, get_section_offset(curr_section), R_HIPO_32, sym_index);
             skip_bytes_in_section(curr_section, 4);
@@ -137,9 +137,9 @@ s_error handle_word(s_asm_directive* directive)
     return new_no_error();
 }
 
-s_error handle_skip(s_asm_directive* directive)
+s_error handle_skip(s_program* program, s_asm_directive* directive)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
 
     if (curr_section == NULL)
         return new_error(ERR_LINE_OUTSIDE_SECTION);
@@ -149,9 +149,9 @@ s_error handle_skip(s_asm_directive* directive)
     return new_no_error();
 }
 
-s_error handle_ascii(s_asm_directive* directive)
+s_error handle_ascii(s_program* program, s_asm_directive* directive)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
 
     if (curr_section == NULL)
         return new_error(ERR_LINE_OUTSIDE_SECTION);
@@ -162,16 +162,16 @@ s_error handle_ascii(s_asm_directive* directive)
     return new_no_error();
 }
 
-s_error handle_equ(s_asm_directive* directive)
+s_error handle_equ(s_program* program, s_asm_directive* directive)
 {
-    s_symbol_table_entry* symbol = get_symbol_entry_symbol(directive->equ_symbol);
+    s_symbol_table_entry* symbol = get_symbol_entry_symbol(get_symbol_table(program), directive->equ_symbol);
 
     if (symbol != 0 && (symbol->state == STS_COMPLETE || symbol->state == STS_EQU))
         return new_error(ERR_DOUBLE_SYM_DECL, directive->equ_symbol);
 
     if (symbol == 0)
     {
-        symbol = create_new_symbol_entry(directive->equ_symbol);
+        symbol = create_new_symbol_entry(get_symbol_table(program), directive->equ_symbol);
     }
 
     symbol->expression = directive->expr;

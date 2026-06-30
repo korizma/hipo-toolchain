@@ -9,6 +9,7 @@ struct s_expr;
 struct s_error;
 struct s_section;
 struct s_asm_instruction;
+struct s_program;
 
 // symbol table types
 #define STT_SECTION 1
@@ -58,19 +59,19 @@ typedef struct s_symbol_table
 } s_symbol_table;
 
 // returns the s_symbol_table_entry pointer, if not found returns 0
-s_symbol_table_entry* get_symbol_entry_index(int index);
+s_symbol_table_entry* get_symbol_entry_index(s_symbol_table* table, int index);
 
 // returns the s_symbol_table_entry pointer, if not found returns 0
-s_symbol_table_entry* get_symbol_entry_symbol(string symbol);
+s_symbol_table_entry* get_symbol_entry_symbol(s_symbol_table* table, string symbol);
 
 // returns the s_symbol_table_entry pointer, if symbol conflict, returns 0
-s_symbol_table_entry* create_new_symbol_entry(string symbol);
+s_symbol_table_entry* create_new_symbol_entry(s_symbol_table* table, string symbol);
 
 // returns the symbol pointer if it already exists, if not creates it and returns it
-s_symbol_table_entry* get_and_create_new_symbol_entry(string symbol);
+s_symbol_table_entry* get_and_create_new_symbol_entry(s_symbol_table* table, string symbol);
 
 // returns the string view of the symbol table, used for final text file export
-string symbol_table_to_string();
+string symbol_table_to_string(s_symbol_table* table);
 
 s_symbol_table_entry import_symbol_table_entry(string line);
 
@@ -78,9 +79,9 @@ s_symbol_table_entry import_symbol_table_entry(string line);
 s_symbol_table* import_symbol_table(vector<string> lines);
 
 // finalizes each equ symbol, and looks for undefined symbols
-vector<s_error> finalize_symbol_table();
+vector<s_error> finalize_symbol_table(s_program* program);
 
 // returns the index of the symbol, if not found returns -1
-long get_symbol_entry_index_by_symbol(string symbol);
+long get_symbol_entry_index_by_symbol(s_symbol_table* table, string symbol);
 
 void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section, long offset, s_asm_instruction* instruction);

@@ -5,6 +5,8 @@
 
 using namespace std;
 
+struct s_program;
+
 typedef struct s_expr
 {
     long integer_value;
@@ -23,12 +25,12 @@ typedef struct s_expr
 // heap allocates a new expression
 s_expr* new_expression();
 // returns if the expression is valid, its valid if it only depends on one section 
-bool expression_is_valid(s_expr* expression);
+bool expression_is_valid(s_program* program, s_expr* expression);
 // simplifies the expression so that it has 0 or 1 symbols
-void simplify_expression(s_expr* expression);
+void simplify_expression(s_program* program, s_expr* expression);
 // adds a literal to the expression
 void add_literal_to_expression(s_expr* expression, long literal);
 // adds a symbol to the expression
 void add_symbol_to_expression(s_expr* expression, string symbol, int sign);
 // sets all symbol indexes
-void equ_set_symbol_indexes(s_expr* expression);
+void equ_set_symbol_indexes(s_program* program, s_expr* expression);

@@ -12,12 +12,12 @@ s_section* new_section()
     return section;
 }
 
-string get_section_symbol(s_section* section)
+string get_section_symbol(s_symbol_table* symbol_table, s_section* section)
 {
     if (section == 0)
         return "";
 
-    s_symbol_table_entry* entry = get_symbol_entry_index(section->sym_table_index);
+    s_symbol_table_entry* entry = get_symbol_entry_index(symbol_table, section->sym_table_index);
     return entry->name;
 }
 
@@ -43,9 +43,9 @@ void bind_rela_table_to_section(s_section* section, s_rela_table* rela_table)
     section->has_rela = true;
 }
 
-string section_to_string(s_section* section)
+string section_to_string(s_program* program, s_section* section)
 {
-    string final_string = "#" + get_section_symbol(section) + "\n";
+    string final_string = "#" + get_section_symbol(get_symbol_table(program), section) + "\n";
 
     int counter = 1;
     for (char c : section->bytes)
@@ -73,29 +73,29 @@ long get_section_offset(s_section* section)
     return section->bytes.size();
 }
 
-s_section* find_section_by_name(string name)
+s_section* find_section_by_name(vector<s_section>& section_list, s_symbol_table* symbol_table, string name)
 {
-    for (s_section& section : get_program()->section_list)
+    for (s_section& section : section_list)
     {
-        if (get_section_symbol(&section) == name)
+        if (get_section_symbol(symbol_table, &section) == name)
             return &section;
     }
     return nullptr;
 }
 
 
-s_section* import_section(vector<string> lines)
+s_section* import_section(vector<string> lines, s_symbol_table* symbol_table)
 {
     if (lines.size() == 0)
         return nullptr;
     s_section* section = new_section();
     string section_name = lines[0].substr(1);
 
-    s_symbol_table_entry* symbol = create_new_symbol_entry(section_name);
+    s_symbol_table_entry* symbol = create_new_symbol_entry(symbol_table, section_name);
 
     symbol->binding = STB_LOCAL;
     symbol->offset_or_value = 0;
-    symbol->section_symbol_table_index = get_symbol_entry_index_by_symbol(section_name);
+    symbol->section_symbol_table_index = get_symbol_entry_index_by_symbol(symbol_table, section_name);
     symbol->state = STS_COMPLETE;
     symbol->size = 0;
     symbol->type = STT_SECTION;

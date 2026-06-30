@@ -12,49 +12,41 @@
 
 using namespace std;
 
-s_program program;
-
-s_program* get_program()
+void init_program(s_program* program, vector<s_asm_line> lines)
 {
-    return &program;
+    program->lines = lines;
+    program->section_list.clear();
+    program->lines.reserve(4096);
+    program->section_list.reserve(128);
+    program->symbol_table = new s_symbol_table();
+    program->trampoline = new s_trampoline();
 }
 
-void init_program()
-{
-    program.lines.clear();
-    program.lines_ended = false;
-    program.section_list.clear();
-    program.lines.reserve(4096);
-    program.section_list.reserve(128);
-    program.symbol_table = new s_symbol_table();
-    program.trampoline = new s_trampoline();
-}
-
-void add_instruction_to_program(s_asm_instruction* instruction)
+void add_instruction_to_program(vector<s_asm_line>& lines, s_asm_instruction* instruction)
 {
     s_asm_line new_line;
     new_line.asm_type = ASM_INSTRUCTION;
     new_line.instruction = instruction;
 
-    program.lines.push_back(new_line);
+    lines.push_back(new_line);
 }
 
-void add_directive_to_program(s_asm_directive* directive)
+void add_directive_to_program(vector<s_asm_line>& lines, s_asm_directive* directive)
 {
     s_asm_line new_line;
     new_line.asm_type = ASM_DIRECTIVE;
     new_line.directive = directive;
 
-    program.lines.push_back(new_line);
+    lines.push_back(new_line);
 }
 
-void add_label_to_program(string label)
+void add_label_to_program(vector<s_asm_line>& lines, string label)
 {
     s_asm_line new_line;
     new_line.asm_type = ASM_LABEL;
     new_line.label = label;
 
-    program.lines.push_back(new_line);
+    lines.push_back(new_line);
 }
 
 string asm_line_to_string(s_asm_line* line)
@@ -72,14 +64,18 @@ string asm_line_to_string(s_asm_line* line)
     return "";
 }
 
-vector<s_asm_line> get_program_lines()
+vector<s_asm_line>& get_program_lines(s_program* program)
 {
-    return program.lines;
+    return program->lines;
 }
 
-bool assemble_program_to_file(string filename)
+bool assemble_program_to_file(string filename, vector<s_asm_line> lines)
 {
-    bool success = assemble_lines();
+    s_program program;
+
+    init_program(&program, lines);
+
+    bool success = assemble_lines(&program);
 
     if (!success)
         return false;
@@ -90,7 +86,7 @@ bool assemble_program_to_file(string filename)
         return false;
     }
 
-    string content = program_to_string();
+    string content = program_to_string(&program);
 
     file << content;
 
@@ -100,22 +96,22 @@ bool assemble_program_to_file(string filename)
     return true;
 }
 
-bool assemble_lines()
+bool assemble_lines(s_program* program)
 {
-    vector<s_asm_line> lines = get_program_lines();
+    vector<s_asm_line> lines = get_program_lines(program);
 
     bool has_errors = false;
     for (s_asm_line line : lines)
     {
         s_error error;
         if (line.asm_type == ASM_LABEL)
-            error = handle_label(&line);
+            error = handle_label(program, &line);
 
         else if (line.asm_type == ASM_INSTRUCTION)
-            error = handle_asm_instruction(line.instruction);
+            error = handle_asm_instruction(program, line.instruction);
 
         else if (line.asm_type == ASM_DIRECTIVE)
-            error = handle_asm_directive(line.directive);
+            error = handle_asm_directive(program, line.directive);
 
         if (!error.no_error)
         {
@@ -127,7 +123,7 @@ bool assemble_lines()
     if (has_errors)
         return false;
 
-    vector<s_error> symbol_table_errors = finalize_symbol_table();
+    vector<s_error> symbol_table_errors = finalize_symbol_table(program);
 
     for (s_error error : symbol_table_errors)
     {
@@ -135,7 +131,7 @@ bool assemble_lines()
         return false;
     }
 
-    vector<s_error> trampoline_errors = write_trampolines();
+    vector<s_error> trampoline_errors = write_trampolines(program);
 
     for (s_error error : trampoline_errors)
     {
@@ -146,47 +142,47 @@ bool assemble_lines()
     return true;
 }
 
-string program_to_string()
+string program_to_string(s_program* program)
 {
     string program_string = "";
 
-    program_string += symbol_table_to_string();
+    program_string += symbol_table_to_string(get_symbol_table(program));
 
-    for (s_section section : program.section_list)
+    for (s_section section : program->section_list)
     {
-        program_string += section_to_string(&section);
+        program_string += section_to_string(program, &section);
         if (section.has_rela)
-            program_string += rela_table_to_string(section.rela_table);
+            program_string += rela_table_to_string(get_symbol_table(program), section.rela_table);
     }
 
     return program_string;
 }
 
 
-s_symbol_table* get_symbol_table()
+s_symbol_table* get_symbol_table(s_program* program)
 {
-    return program.symbol_table;
+    return program->symbol_table;
 }
 
-s_trampoline* get_trampoline()
+s_trampoline* get_trampoline(s_program* program)
 {
-    return program.trampoline;
+    return program->trampoline;
 }
 
-s_section* get_current_section()
+s_section* get_current_section(s_program* program)
 {
-    if (program.section_list.empty())
+    if (program->section_list.empty())
         return NULL;
-    return &program.section_list.back();
+    return &program->section_list.back();
 }
 
-s_error handle_label(s_asm_line* line)
+s_error handle_label(s_program* program, s_asm_line* line)
 {
-    s_section* curr_section = get_current_section();
+    s_section* curr_section = get_current_section(program);
     if (curr_section == NULL)
         return new_error(ERR_LINE_OUTSIDE_SECTION, asm_line_to_string(line));
 
-    s_symbol_table_entry* symbol = get_symbol_entry_symbol(line->label);
+    s_symbol_table_entry* symbol = get_symbol_entry_symbol(get_symbol_table(program), line->label);
 
     if (symbol != 0 && (symbol->state == STS_COMPLETE || symbol->state == STS_EQU))
         return new_error(ERR_DOUBLE_SYM_DECL, line->label);
@@ -203,7 +199,7 @@ s_error handle_label(s_asm_line* line)
     }
     else
     {
-        symbol = create_new_symbol_entry(line->label);
+        symbol = create_new_symbol_entry(get_symbol_table(program), line->label);
         symbol->offset_or_value = curr_section->bytes.size();
         symbol->size = 0;
         symbol->type = STT_NOTYPE;
@@ -215,15 +211,7 @@ s_error handle_label(s_asm_line* line)
     return new_no_error();
 }
 
-void free_program()
+void add_section_to_program(s_program* program, s_section* section)
 {
-    delete program.trampoline;
-    delete program.symbol_table;
-    program.trampoline = NULL;
-    program.symbol_table = NULL;
-}
-
-void add_section_to_program(s_section* section)
-{
-    program.section_list.push_back(*section);
+    program->section_list.push_back(*section);
 }

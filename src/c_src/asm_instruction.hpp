@@ -6,6 +6,7 @@
 using namespace std;
 
 struct s_error;
+struct s_program;
 
 enum 
 {
@@ -105,44 +106,44 @@ typedef struct s_asm_instruction
 s_asm_instruction* new_asm_instruction();
 
 // forwards the instruction to the correct handler
-s_error handle_asm_instruction(s_asm_instruction* instruction);
+s_error handle_asm_instruction(s_program* program, s_asm_instruction* instruction);
 
 // returns the instruction as a string
 string asm_instruction_to_string(s_asm_instruction* instruction);
 
-s_error handle_halt(s_asm_instruction* instruction);
-s_error handle_int(s_asm_instruction* instruction);
-s_error handle_iret(s_asm_instruction* instruction);
+s_error handle_halt(s_program* program, s_asm_instruction* instruction);
+s_error handle_int(s_program* program, s_asm_instruction* instruction);
+s_error handle_iret(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_call(s_asm_instruction* instruction);
-s_error handle_ret(s_asm_instruction* instruction);
-s_error handle_push(s_asm_instruction* instruction);
-s_error handle_pop(s_asm_instruction* instruction);
+s_error handle_call(s_program* program, s_asm_instruction* instruction);
+s_error handle_ret(s_program* program, s_asm_instruction* instruction);
+s_error handle_push(s_program* program, s_asm_instruction* instruction);
+s_error handle_pop(s_program* program, s_asm_instruction* instruction);
 
 
-s_error handle_jmp(s_asm_instruction* instruction);
-s_error handle_beq(s_asm_instruction* instruction);
-s_error handle_bne(s_asm_instruction* instruction);
-s_error handle_bgt(s_asm_instruction* instruction);
+s_error handle_jmp(s_program* program, s_asm_instruction* instruction);
+s_error handle_beq(s_program* program, s_asm_instruction* instruction);
+s_error handle_bne(s_program* program, s_asm_instruction* instruction);
+s_error handle_bgt(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_xchg(s_asm_instruction* instruction);
+s_error handle_xchg(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_add(s_asm_instruction* instruction);
-s_error handle_sub(s_asm_instruction* instruction);
-s_error handle_mul(s_asm_instruction* instruction);
-s_error handle_div(s_asm_instruction* instruction);
+s_error handle_add(s_program* program, s_asm_instruction* instruction);
+s_error handle_sub(s_program* program, s_asm_instruction* instruction);
+s_error handle_mul(s_program* program, s_asm_instruction* instruction);
+s_error handle_div(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_not(s_asm_instruction* instruction);
+s_error handle_not(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_and(s_asm_instruction* instruction);
-s_error handle_or(s_asm_instruction* instruction);
-s_error handle_xor(s_asm_instruction* instruction);
-s_error handle_shl(s_asm_instruction* instruction);
-s_error handle_shr(s_asm_instruction* instruction);
+s_error handle_and(s_program* program, s_asm_instruction* instruction);
+s_error handle_or(s_program* program, s_asm_instruction* instruction);
+s_error handle_xor(s_program* program, s_asm_instruction* instruction);
+s_error handle_shl(s_program* program, s_asm_instruction* instruction);
+s_error handle_shr(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_ld(s_asm_instruction* instruction);
+s_error handle_ld(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_st(s_asm_instruction* instruction);
+s_error handle_st(s_program* program, s_asm_instruction* instruction);
 
-s_error handle_csrrd(s_asm_instruction* instruction);
-s_error handle_csrwr(s_asm_instruction* instruction);
+s_error handle_csrrd(s_program* program, s_asm_instruction* instruction);
+s_error handle_csrwr(s_program* program, s_asm_instruction* instruction);
