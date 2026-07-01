@@ -48,8 +48,15 @@ vector<string> find_all_option_values_seperate(vector<string> args, string optio
 vector<string> find_all_non_options(vector<string> args)
 {
     vector<string> non_options;
-    for (const auto& arg : args)
+    for (int i = 0; i < args.size(); i++)
     {
+        const string& arg = args[i];
+        if (arg == "-o")
+        {
+            i++;
+            continue;
+        }
+
         if (arg.substr(0, 2) != "--" && arg.substr(0, 1) != "-")
             non_options.push_back(arg);
     }

@@ -41,6 +41,24 @@ string error_type_message(char type)
     case ERR_UNDEFINED_SYM:
         return "Undefined symbol";
 
+    case ERR_EQU_NOT_CALCULATABLE:
+        return "EQU expression is not calculatable";
+
+    case ERR_SECTION_SYMBOL_CONFLICT:
+        return "Section symbol conflict";
+
+    case ERR_EXTERN_LOCAL_CONFLICT:
+        return "Extern local conflict";
+
+    case ERR_SYMBOL_CONFLICT:
+        return "Symbol conflict";
+
+    case ERR_LINK_FAIL_SYM_CONFLICT:
+        return "Link failed due to symbol conflict";
+
+    case ERR_OUTPUT_FILE_OPEN_FAIL:
+        return "Failed to open output file";
+
     default:
         return "Unknown error";
     }

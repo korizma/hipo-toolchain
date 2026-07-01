@@ -11,12 +11,12 @@ cat "$tmp/source1.bin"
 cat "$tmp/source2.bin"
 cat "$tmp/source3.bin"
 
-./bin/linker -o "$tmp/partly_linked.bin" "$tmp/source1.bin" "$tmp/source2.bin"
+./bin/linker -o "$tmp/partly_linked.bin" "$tmp/source1.bin" "$tmp/source2.bin" -relocatable
 
 echo "Partly linked file:"
 cat "$tmp/partly_linked.bin"
 
-./bin/linker -o "$tmp/linked.bin" "$tmp/partly_linked.bin" "$tmp/source3.bin"
+./bin/linker -o "$tmp/linked.bin" "$tmp/partly_linked.bin" "$tmp/source3.bin" -relocatable
 
 echo "Linked file:"
 cat "$tmp/linked.bin"

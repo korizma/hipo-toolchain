@@ -34,10 +34,10 @@ bool linker_execute(char type, vector<string> obj_filenames, string output_filen
 s_linker_state* new_linker(char type, vector<string> obj_filenames, string output_filename, vector<pair<string, long>> section_place_locations);
 
 // links all files, the relocatable option
-bool export_linked_file_rel(s_linker_state* linker_state);
+s_error export_linked_file_rel(s_linker_state* linker_state);
 
 // links all files, the hex option 
-bool export_linked_file_hex(s_linker_state* linker_state);
+s_error export_linked_file_hex(s_linker_state* linker_state);
 
 vector<s_object_file> get_object_files(s_linker_state* linker_state);
 

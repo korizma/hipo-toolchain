@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 
     vector<string> place_args = find_all_option_values_equals(args, "-place");
     vector<string> obj_files = find_all_non_options(args);
-    string output_filename = find_first_option_value_equals(args, "-o");
+    string output_filename = find_first_option_value_seperate(args, "-o");
 
     if (output_filename == "")
     {
@@ -73,7 +73,6 @@ int main(int argc, char **argv)
 
     if (!success)
     {
-        cout << "Linking failed." << endl;
         return 1;
     }
 

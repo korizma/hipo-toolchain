@@ -1,6 +1,7 @@
 #include "object_file.hpp"
 #include <fstream>
 #include <sstream>
+#include <iostream>
 #include "misc.hpp"
 #include "rela_table.hpp"
 
@@ -26,7 +27,7 @@ s_object_file* load_object_file(s_linker_state* state, string filename)
     if (text == "")
         return nullptr;
 
-    s_object_file* obj_file = new s_object_file;
+    s_object_file* obj_file = new s_object_file();
 
     vector<string> lines = split_string(text, '\n');
     vector<string> curr;

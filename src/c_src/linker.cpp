@@ -22,15 +22,22 @@ bool linker_execute(char type, vector<string> obj_filenames, string output_filen
     bool success = false;
     if (type == LINKER_HEX)
     {
-        success = export_linked_file_hex(linker_state);
+        s_error error = export_linked_file_hex(linker_state);
+        if (!error.no_error)
+        {
+            cout << "Linking failed: " << error_to_string(error) << endl;
+        }
+        success = error.no_error;
     }
     else if (type == LINKER_REL)
     {
-        success = export_linked_file_rel(linker_state);
+        s_error error = export_linked_file_rel(linker_state);
+        if (!error.no_error)
+        {
+            cout << "Linking failed: " << error_to_string(error) << endl;
+        }
+        success = error.no_error;
     }
-
-    if (!success)
-        cout << "Linking failed." << endl;
 
     return success;
 }
@@ -55,7 +62,7 @@ s_linker_state* new_linker(char type, vector<string> obj_filenames, string outpu
     return linker_state;
 }
 
-bool export_linked_file_rel(s_linker_state* linker_state)
+s_error export_linked_file_rel(s_linker_state* linker_state)
 {
     vector<s_error> symbol_conflicts = combine_all_symbol_tables_rel(linker_state);
 
@@ -65,7 +72,7 @@ bool export_linked_file_rel(s_linker_state* linker_state)
         for (s_error symbol : symbol_conflicts)
             cout << error_to_string(symbol) << endl;
         
-        return false;
+        return new_error(ERR_LINK_FAIL_SYM_CONFLICT);
     }
 
     combine_all_sections(linker_state);
@@ -76,13 +83,13 @@ bool export_linked_file_rel(s_linker_state* linker_state)
     if (!file.is_open())
     {
         cout << "Failed to open output file: " << linker_state->output_filename << endl;
-        return false;
+        return new_error(ERR_OUTPUT_FILE_OPEN_FAIL);
     }
 
     file << output;
     file.close();
 
-    return true;
+    return new_no_error();
 }
 
 vector<s_object_file> get_object_files(s_linker_state* linker_state)
@@ -117,7 +124,7 @@ string output_linked_to_string_rel(s_linker_state* linker_state)
 }
 
 
-bool export_linked_file_hex(s_linker_state* linker_state)
+s_error export_linked_file_hex(s_linker_state* linker_state)
 {
     // first merge all symbol tables
     // combine sections
