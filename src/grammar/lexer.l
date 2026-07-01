@@ -1,4 +1,5 @@
 /* Lekser za Asembler */
+%option yylineno
 
 %{
 #include "grammar.tab.h"

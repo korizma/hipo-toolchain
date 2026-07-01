@@ -266,7 +266,13 @@ void parser_add_csrwr_instruction(char reg, char csr)
     add_instruction_to_program(lines, instr);
 }
 
+extern int yylineno;
+extern char *yytext;
+#include <iostream>
+
 void yyerror(const char *message)
 {
-    cout << "Parser Error: " << message << endl;
+    std::cout << "Parser error at line " << yylineno
+             << " near '" << yytext << "': "
+         << message << std::endl;
 }

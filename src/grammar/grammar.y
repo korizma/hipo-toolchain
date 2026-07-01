@@ -1,3 +1,6 @@
+%define parse.error detailed
+%define parse.lac full
+
 %{
 #include "helper.hpp"
 
