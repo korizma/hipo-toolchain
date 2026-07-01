@@ -9,6 +9,7 @@ struct s_section;
 struct s_symbol_table_entry;
 struct s_symbol_table;
 struct s_program;
+struct s_linker_state;
 
 #define R_HIPO_32 0
 #define R_HIPO_12 1
@@ -52,3 +53,8 @@ void rela_table_symbol_update(s_symbol_table* symbol_table, vector<s_section>& s
 
 // writes the relocation
 void write_rela_table_entry(s_symbol_table* symbol_table, s_rela_table_entry* entry, s_section* section);
+
+// linker helpers
+
+// updates the rela table for the section so each offset is increased by increase, also so they have correct indexes
+void update_rela_table_linker(s_linker_state* linker_state, s_section* s1, s_symbol_table* st1, long increase);

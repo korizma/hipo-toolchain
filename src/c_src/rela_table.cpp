@@ -4,6 +4,7 @@
 #include "symbol_table.hpp"
 #include "misc.hpp"
 #include "asm.hpp"
+#include "linker.hpp"
 
 using namespace std;
 
@@ -177,4 +178,19 @@ s_rela_table* import_rela_table(vector<string> lines, s_symbol_table* symbol_tab
         rela_table->entries.push_back(entry);
     }
     return rela_table;
+}
+
+
+void update_rela_table_linker(s_linker_state* linker_state, s_section* s1, s_symbol_table* st1, long increase)
+{
+    if (!s1->has_rela)
+        return;
+
+    for (s_rela_table_entry& entry : s1->rela_table->entries)
+    {
+        entry.offset_in_section += increase;
+        entry.symbol_symbol_table_index = get_symbol_entry_index_by_symbol(get_symbol_table_linker(linker_state), get_symbol_entry_index(st1, entry.symbol_symbol_table_index)->name);
+    }
+
+    s1->rela_table->section_symbol_table_index = s1->sym_table_index;
 }

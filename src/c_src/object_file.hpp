@@ -14,7 +14,8 @@ typedef struct s_object_file
     s_symbol_table symbol_table;
 } s_object_file;
 
-s_object_file load_object_file(string filename);
+// loads the file, and adds all section names to the symbol table
+s_object_file* load_object_file(s_linker_state* state, string filename);
 
 
 

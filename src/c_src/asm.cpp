@@ -150,7 +150,7 @@ string program_to_string(s_program* program)
 
     for (s_section section : program->section_list)
     {
-        program_string += section_to_string(program, &section);
+        program_string += section_to_string(get_symbol_table(program), &section);
         if (section.has_rela)
             program_string += rela_table_to_string(get_symbol_table(program), section.rela_table);
     }

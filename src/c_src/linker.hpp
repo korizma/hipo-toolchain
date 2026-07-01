@@ -21,15 +21,17 @@ typedef struct s_linker_state
 
     string output_filename;
 
-    pair<string, long> section_place_locations;
+    vector<pair<string, long>> section_place_locations;
+
+    bool failed_load;
 
 } s_linker_state;
 
 // executes the linker, and links all files, outputs to the output file
-bool linker_execute(char type, vector<string> obj_filenames, string output_filename, pair<string, long> section_place_locations);
+bool linker_execute(char type, vector<string> obj_filenames, string output_filename, vector<pair<string, long>> section_place_locations);
 
 // returns a new linker state object
-s_linker_state* new_linker(char type, vector<string> obj_filenames, string output_filename, pair<string, long> section_place_locations);
+s_linker_state* new_linker(char type, vector<string> obj_filenames, string output_filename, vector<pair<string, long>> section_place_locations);
 
 // links all files, the relocatable option
 bool export_linked_file_rel(s_linker_state* linker_state);
@@ -47,3 +49,8 @@ string output_linked_to_string_rel(s_linker_state* linker_state);
 // returns the linked files, the hex option
 string output_linked_to_string_hex(s_linker_state* linker_state);
 
+// returns nullptr if it doesnt exist
+s_section* get_section_by_name_from_linked_file(s_linker_state* linker_state, string name);
+
+// adds the section to the linked file, also updates the indexes of everything
+void add_section_to_linked_file(s_linker_state* linker_state, s_section* section, s_symbol_table* old_st);

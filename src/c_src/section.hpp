@@ -48,3 +48,6 @@ s_section* find_section_by_name(vector<s_section>& section_list, s_symbol_table*
 // linker helpers
 
 void combine_all_sections(s_linker_state* linker_state);
+
+// the result will be in the linked object file
+void combine_section_to_linked(s_linker_state* linker_state, s_section* s1, s_symbol_table* st1);

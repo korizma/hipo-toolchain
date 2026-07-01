@@ -92,4 +92,7 @@ void add_mem_reg_sym_to_symbol(s_symbol_table_entry* symbol, s_section* section,
 // linker specific functions
 
 // combines all symbol tables into a global symbol table, returns conflicts of symbols
-vector<string> combine_all_symbol_tables_rel(s_linker_state* linker_state);
+vector<s_error> combine_all_symbol_tables_rel(s_linker_state* linker_state);
+
+// increases the offset for each symbol from the old symbol table by increase
+void update_linked_symbol_table(s_linker_state* linker_state, s_section* section, s_symbol_table* old_symbol_table, long increase);

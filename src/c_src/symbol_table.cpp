@@ -6,6 +6,8 @@
 #include "section.hpp"
 #include "misc.hpp"
 #include "rela_table.hpp"
+#include "linker.hpp"
+#include "error.hpp"
 
 s_symbol_table_entry* get_symbol_entry_index(s_symbol_table* table, int index)
 { 
@@ -285,13 +287,16 @@ s_symbol_table_entry import_symbol_table_entry(string line)
         entry.type = STT_NOTYPE;
 
     entry.offset_or_value = stoi(parts[1], nullptr, 10);
-    entry.section_symbol_table_index = stoi(parts[5], nullptr, 10);
+    if (parts[5] == "UND")
+        entry.section_symbol_table_index = -1;
+    else
+        entry.section_symbol_table_index = stoi(parts[5], nullptr, 10);
     entry.size = stoi(parts[2], nullptr, 10);
     entry.name = parts[6];
 
-    if (parts[3] == "LOC")
+    if (parts[4] == "LOC")
         entry.binding = STB_LOCAL;
-    if (parts[3] == "GLOB")
+    if (parts[4] == "GLOB")
         entry.binding = STB_GLOBAL;
 
     return entry;
@@ -313,3 +318,111 @@ s_symbol_table* import_symbol_table(vector<string> lines)
     return sym_table;
 }
 
+// returns conflicts
+vector<s_error> _add_symbols_to_sym_table(s_symbol_table* main_table, s_symbol_table* side_table)
+{
+    vector<s_error> conflicts;
+    // all cases
+    // for normal symbols, if they have a conflict error
+    // for section symbols, they check for existing but if it exists as section then its ok, else error
+    // for extern symbols, they add them self if they dont exist, but dont change anything if it already exists
+    for (s_symbol_table_entry& entry : side_table->entries)
+    {
+        s_symbol_table_entry* existing = get_symbol_entry_symbol(main_table, entry.name);
+        if (entry.type == STT_SECTION)
+        {
+            if (existing == nullptr)
+            {
+                s_symbol_table_entry* new_entry = create_new_symbol_entry(main_table, entry.name);
+                new_entry->binding = entry.binding;
+                new_entry->offset_or_value = entry.offset_or_value;
+                new_entry->section_symbol_table_index = get_symbol_entry_index_by_symbol(main_table, side_table->entries[entry.section_symbol_table_index].name);
+                new_entry->size = entry.size;
+                new_entry->type = entry.type;
+            }
+            else
+            {
+                if (existing->type != STT_SECTION)
+                {
+                    conflicts.push_back(new_error(ERR_SECTION_SYMBOL_CONFLICT, entry.name));
+                }
+            }
+        }
+        else if (entry.binding == STB_GLOBAL && entry.section_symbol_table_index == -1 && entry.offset_or_value == 0)
+        {
+            // this symbol is extern
+            if (existing == nullptr)
+            {
+                s_symbol_table_entry* new_entry = create_new_symbol_entry(main_table, entry.name);
+                new_entry->binding = entry.binding;
+                new_entry->offset_or_value = entry.offset_or_value;
+                new_entry->section_symbol_table_index = entry.section_symbol_table_index;
+                new_entry->size = entry.size;
+                new_entry->type = entry.type;
+            }
+            else
+            {
+                // if the binding is local, then its an error
+                if (existing->binding == STB_LOCAL)
+                {
+                    conflicts.push_back(new_error(ERR_EXTERN_LOCAL_CONFLICT, entry.name));
+                }
+            }
+        }
+        else
+        {
+            if (existing != nullptr)
+            {
+                if (existing->binding != STB_GLOBAL || existing->section_symbol_table_index != -1 || entry.offset_or_value != 0)
+                {
+                    // not extern symbol
+                    conflicts.push_back(new_error(ERR_SYMBOL_CONFLICT, entry.name));
+                }
+                existing->binding = entry.binding;
+                existing->offset_or_value = entry.offset_or_value;
+                existing->section_symbol_table_index = get_symbol_entry_index_by_symbol(main_table, side_table->entries[entry.section_symbol_table_index].name);
+                existing->size = entry.size;
+                existing->type = entry.type;
+            }
+            else
+            {
+                s_symbol_table_entry* new_entry = create_new_symbol_entry(main_table, entry.name);
+                new_entry->binding = entry.binding;
+                new_entry->offset_or_value = entry.offset_or_value;
+                new_entry->section_symbol_table_index = get_symbol_entry_index_by_symbol(main_table, side_table->entries[entry.section_symbol_table_index].name);
+                new_entry->size = entry.size;
+                new_entry->type = entry.type;
+            }
+        }
+    }
+
+    return conflicts;
+}
+
+// combines all symbol tables into a global symbol table, returns conflicts of symbols
+vector<s_error> combine_all_symbol_tables_rel(s_linker_state* linker_state)
+{
+    vector<s_error> errs;
+    for (s_object_file& obj_file : linker_state->obj_files)
+    {
+        vector<s_error> new_errs = _add_symbols_to_sym_table(&linker_state->linked_file.symbol_table, &obj_file.symbol_table);
+
+        errs.insert(errs.end(), new_errs.begin(), new_errs.end());
+    }
+    return errs;
+}
+
+// increases the offset for each symbol from the old symbol table by increase
+void update_linked_symbol_table(s_linker_state* linker_state, s_section* section, s_symbol_table* old_symbol_table, long increase)
+{
+    for (s_symbol_table_entry& entry : old_symbol_table->entries)
+    {
+        // skip all non section symbols
+        if (entry.section_symbol_table_index != section->sym_table_index)
+            continue;
+
+        s_symbol_table_entry* new_entry = get_symbol_entry_symbol(get_symbol_table_linker(linker_state), entry.name);
+
+        new_entry->offset_or_value += increase;
+    }
+}
