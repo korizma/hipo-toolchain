@@ -4,6 +4,7 @@
 #include <iostream>
 #include "misc.hpp"
 #include "rela_table.hpp"
+#include "linker.hpp"
 
 
 using namespace std;
@@ -50,6 +51,7 @@ s_object_file* load_object_file(s_linker_state* state, string filename)
                 if (rela == NULL)
                 {
                     s_section* curr_section = import_section(curr, &obj_file->symbol_table);
+                    create_new_symbol_entry(&state->linked_file.symbol_table, curr[0].substr(1));
                     obj_file->sections.push_back(*curr_section);
                 }
             }
@@ -70,6 +72,7 @@ s_object_file* load_object_file(s_linker_state* state, string filename)
         if (rela == NULL)
         {
             s_section* curr_section = import_section(curr, &obj_file->symbol_table);
+                    create_new_symbol_entry(&state->linked_file.symbol_table, curr[0].substr(1));
             obj_file->sections.push_back(*curr_section);
         }
     }

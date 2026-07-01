@@ -8,3 +8,4 @@ bin/
 src/c_src/grammar.tab.c
 src/c_src/grammar.tab.h
 src/c_src/lex.yy.c
+*.bin

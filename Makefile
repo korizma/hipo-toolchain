@@ -46,7 +46,7 @@ EMU_OBJECTS := $(EMU_MAIN_OBJECT)
 
 DEPS := $(ASM_OBJECTS:.o=.d) $(LD_OBJECTS:.o=.d) $(EMU_OBJECTS:.o=.d) $(COMMON_OBJECTS:.o=.d)
 
-.PHONY: all build build-asm build-ld build-emu build_asm build_ld build_emu asm ld emu run-asm run-ld run-emu run_asm run_ld run_emu regenerate-grammar clean
+.PHONY: all build build-asm build-ld build-emu build_asm build_ld build_emu asm ld emu run-asm run-ld run-emu run_asm run_ld run_emu test regenerate-grammar clean
 
 all: build
 
@@ -86,6 +86,9 @@ run_asm: run-asm
 run_ld: run-ld
 
 run_emu: run-emu
+
+test: build
+	SS_TEST_SKIP_BUILD=1 ./tests/run_all.sh
 
 regenerate-grammar: | $(C_SRC_DIR)
 	$(YACC) -d -o $(PARSER_C) $(GRAMMAR)

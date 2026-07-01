@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include "error.hpp"
 
 using namespace std;
 
@@ -16,6 +17,10 @@ typedef struct s_section
     vector<char> bytes;
     bool has_rela;
     s_rela_table* rela_table;
+
+    // linker
+    long placed_at;
+    bool placed;
 } s_section;
 
 // helpers
@@ -51,3 +56,7 @@ void combine_all_sections(s_linker_state* linker_state);
 
 // the result will be in the linked object file
 void combine_section_to_linked(s_linker_state* linker_state, s_section* s1, s_symbol_table* st1);
+
+s_error place_all_sections(s_linker_state* linker_state);
+
+string section_to_linked_string(s_section* section);

@@ -342,10 +342,11 @@ vector<s_error> _add_symbols_to_sym_table(s_symbol_table* main_table, s_symbol_t
             }
             else
             {
-                if (existing->type != STT_SECTION)
-                {
-                    conflicts.push_back(new_error(ERR_SECTION_SYMBOL_CONFLICT, entry.name));
-                }
+                existing->binding = entry.binding;
+                existing->offset_or_value = entry.offset_or_value;
+                existing->section_symbol_table_index = get_symbol_entry_index_by_symbol(main_table, side_table->entries[entry.section_symbol_table_index].name);
+                existing->size = entry.size;
+                existing->type = entry.type;
             }
         }
         else if (entry.binding == STB_GLOBAL && entry.section_symbol_table_index == -1 && entry.offset_or_value == 0)
@@ -424,5 +425,33 @@ void update_linked_symbol_table(s_linker_state* linker_state, s_section* section
         s_symbol_table_entry* new_entry = get_symbol_entry_symbol(get_symbol_table_linker(linker_state), entry.name);
 
         new_entry->offset_or_value += increase;
+    }
+}
+
+vector<s_error> find_unresolved_symbols(s_symbol_table* symbol_table)
+{
+    vector<s_error> unresolved;
+
+    for (s_symbol_table_entry& entry : symbol_table->entries)
+    {
+        if (entry.type == STT_NOTYPE && entry.binding == STB_GLOBAL && entry.section_symbol_table_index == -1)
+            unresolved.push_back(new_error(ERR_UNDEFINED_SYM, entry.name));
+    }
+
+    return unresolved;
+}
+
+
+void resolve_all_symbols(s_linker_state* linker_state)
+{
+    s_symbol_table* symbol_table = get_symbol_table_linker(linker_state);
+    for (s_symbol_table_entry& entry : symbol_table->entries)
+    {
+        if (entry.type == STT_SECTION || entry.section_symbol_table_index == -1)
+            continue;
+
+        s_symbol_table_entry* section = get_symbol_entry_index(symbol_table, entry.section_symbol_table_index);
+
+        entry.offset_or_value += section->offset_or_value;
     }
 }

@@ -4,6 +4,7 @@
 #include "asm.hpp"
 #include "linker.hpp"
 #include "rela_table.hpp"
+#include <algorithm>
 
 s_section* new_section()
 {
@@ -11,6 +12,7 @@ s_section* new_section()
     section->sym_table_index = -1;
     section->has_rela = false;
     section->rela_table = nullptr;
+    section->placed = false;
     return section;
 }
 
@@ -168,4 +170,106 @@ void combine_section_to_linked(s_linker_state* linker_state, s_section* s1, s_sy
 
     // we write the bytes to the section
     write_bytes_to_section(main_section, s1->bytes);
+}
+
+bool _space_is_free(vector<pair<long, long>> occupied_slots, long place, long size)
+{
+    for (pair<long, long> slot : occupied_slots)
+    {
+        long slot_start = slot.first;
+        long slot_end = slot.second;
+
+        if (place >= slot_start && place < slot_end)
+            return false;
+
+        if (place + size > slot_start && place + size <= slot_end)
+            return false;
+
+        if (place <= slot_start && place + size >= slot_end)
+            return false;
+    }
+    return true;
+}
+
+long _find_place(vector<pair<long, long>> occupied_slots, long size)
+{
+    long place = 0;
+
+    for (pair<long, long> place_size : occupied_slots)
+    {
+        if (place_size.first > place + size)
+        {
+            return place;
+        }
+        place = place_size.first + place_size.second;
+    }
+    return place;
+}
+
+s_error place_all_sections(s_linker_state* linker_state)
+{
+    vector<pair<long, long>> occupied_slots;
+    for (pair<string, long> place_section : linker_state->section_place_locations)
+    {
+        s_section* section = get_section_by_name_from_linked_file(linker_state, place_section.first);
+        if (section == nullptr)
+        {
+            return new_error(ERR_INVALID_SECTION_TO_PLACE, place_section.first);
+        }
+        if (!_space_is_free(occupied_slots, place_section.second, section->bytes.size()))
+        {
+            return new_error(ERR_SECTION_PLACEMENT_CONFLICT, place_section.first);
+        }
+
+        occupied_slots.push_back(make_pair(place_section.second, section->bytes.size()));
+        section->placed_at = place_section.second;
+        section->placed = true;
+
+        s_symbol_table_entry* entry = get_symbol_entry_index(&linker_state->linked_file.symbol_table, section->sym_table_index);
+        entry->offset_or_value = place_section.second;
+    }
+
+    sort(occupied_slots.begin(), occupied_slots.end());
+
+    for (s_section& section : linker_state->linked_file.sections)
+    {
+        if (section.placed)
+            continue;
+
+        long place = _find_place(occupied_slots, section.bytes.size());
+        occupied_slots.push_back(make_pair(place, section.bytes.size()));
+        section.placed_at = place;
+        section.placed = true;
+
+        s_symbol_table_entry* entry = get_symbol_entry_index(&linker_state->linked_file.symbol_table, section.sym_table_index);
+        entry->offset_or_value = place;
+    }
+
+    return new_no_error();
+}
+
+
+string section_to_linked_string(s_section* section)
+{
+    long place = section->placed_at;
+    string final_string = "";
+
+    if (place % 8 != 0)
+    {
+        final_string += "\n" + long_to_string_hex(place - place%8) + ": ";
+        for (long i = 0; i < place%8; i++)
+        {
+            final_string += "00 ";
+        }
+    }
+
+    for (char c : section->bytes)
+    {
+        string hex = char_to_string_hex(c);
+        if (place % 8 == 0)
+            final_string += "\n" + long_to_string_hex(place) + ": ";
+        final_string += hex + " ";
+        place++;
+    }
+    return final_string;
 }

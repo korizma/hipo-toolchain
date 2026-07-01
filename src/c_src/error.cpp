@@ -58,6 +58,15 @@ string error_type_message(char type)
 
     case ERR_OUTPUT_FILE_OPEN_FAIL:
         return "Failed to open output file";
+    
+    case ERR_LINK_FAIL_SYM_UNRESOLVED:
+        return "Link failed due to unresolved symbols";
+
+    case ERR_INVALID_SECTION_TO_PLACE:
+        return "Invalid section to place";
+
+    case ERR_SECTION_PLACEMENT_CONFLICT:
+        return "Section placement conflict";
 
     default:
         return "Unknown error";

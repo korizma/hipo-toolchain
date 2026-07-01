@@ -96,3 +96,7 @@ vector<s_error> combine_all_symbol_tables_rel(s_linker_state* linker_state);
 
 // increases the offset for each symbol from the old symbol table by increase
 void update_linked_symbol_table(s_linker_state* linker_state, s_section* section, s_symbol_table* old_symbol_table, long increase);
+
+vector<s_error> find_unresolved_symbols(s_symbol_table* symbol_table);
+
+void resolve_all_symbols(s_linker_state* linker_state);

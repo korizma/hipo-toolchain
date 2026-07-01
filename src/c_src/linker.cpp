@@ -6,6 +6,7 @@
 #include "error.hpp"
 #include <iostream>
 #include <fstream>
+#include "misc.hpp"
 
 using namespace std;
 
@@ -104,7 +105,14 @@ s_symbol_table* get_symbol_table_linker(s_linker_state* linker_state)
 
 string output_linked_to_string_hex(s_linker_state* linker_state)
 {
-    return "";
+    string final_string = "";
+    
+    for (s_section& section : linker_state->linked_file.sections)
+    {
+        final_string += section_to_linked_string(&section);
+    }
+
+    return final_string;
 }
 
 string output_linked_to_string_rel(s_linker_state* linker_state)
@@ -127,11 +135,52 @@ string output_linked_to_string_rel(s_linker_state* linker_state)
 s_error export_linked_file_hex(s_linker_state* linker_state)
 {
     // first merge all symbol tables
-    // combine sections
-    // then place sections, first place using the place commands, then by defined order
-    // resolve symbol values
-    // do relocations
-    // export
+    vector<s_error> symbol_conflicts = combine_all_symbol_tables_rel(linker_state);
+
+    if (symbol_conflicts.size() != 0)
+    {
+        for (s_error symbol : symbol_conflicts)
+            cout << error_to_string(symbol) << endl;
+        
+        return new_error(ERR_LINK_FAIL_SYM_CONFLICT);
+    }
+
+    vector<s_error> unresolved_symbols = find_unresolved_symbols(get_symbol_table_linker(linker_state));
+
+    if (unresolved_symbols.size() != 0)
+    {
+        for (s_error symbol : unresolved_symbols)
+            cout << error_to_string(symbol) << endl;
+        
+        return new_error(ERR_LINK_FAIL_SYM_UNRESOLVED);
+    }
+
+    combine_all_sections(linker_state);
+
+    s_error error = place_all_sections(linker_state);
+
+    if (!error.no_error)
+    {
+        cout << error_to_string(error) << endl;
+        return error;
+    }
+
+    resolve_all_symbols(linker_state);
+
+    write_all_relocations(linker_state);
+    
+    string output = output_linked_to_string_hex(linker_state);
+
+    ofstream file(linker_state->output_filename);
+    if (!file.is_open())
+    {
+        return new_error(ERR_OUTPUT_FILE_OPEN_FAIL);
+    }
+
+    file << output;
+    file.close();
+
+    return new_no_error();
 }
 
 

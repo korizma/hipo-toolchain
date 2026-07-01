@@ -56,7 +56,7 @@ int main(int argc, char **argv)
 
     for (string place_arg : place_args)
     {
-        vector<string> parts = split_string(place_arg, '=');
+        vector<string> parts = split_string(place_arg, '@');
         if (parts.size() != 2)
         {
             cout << "Invalid -place argument: " << place_arg << endl;

@@ -134,7 +134,7 @@ void write_rela_table_entry(s_symbol_table* symbol_table, s_rela_table_entry* en
     s_symbol_table_entry* symbol = get_symbol_entry_index(symbol_table, entry->symbol_symbol_table_index);
     if (entry->relocation_type == R_HIPO_32)
     {
-        vector<char> bytes = int_to_4_bytes(symbol->offset_or_value);
+        vector<char> bytes = int_to_4_bytes(symbol->offset_or_value + entry->addend);
         section->bytes[entry->offset_in_section + 0] = bytes[0];
         section->bytes[entry->offset_in_section + 1] = bytes[1];
         section->bytes[entry->offset_in_section + 2] = bytes[2];
@@ -193,4 +193,19 @@ void update_rela_table_linker(s_linker_state* linker_state, s_section* s1, s_sym
     }
 
     s1->rela_table->section_symbol_table_index = s1->sym_table_index;
+}
+
+
+void write_all_relocations(s_linker_state* linker_state)
+{
+    for (s_section& section : linker_state->linked_file.sections)
+    {
+        if (!section.has_rela)
+            continue;
+
+        for (s_rela_table_entry& entry : section.rela_table->entries)
+        {
+            write_rela_table_entry(get_symbol_table_linker(linker_state), &entry, &section);
+        }
+    }
 }

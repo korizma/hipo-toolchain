@@ -58,3 +58,5 @@ void write_rela_table_entry(s_symbol_table* symbol_table, s_rela_table_entry* en
 
 // updates the rela table for the section so each offset is increased by increase, also so they have correct indexes
 void update_rela_table_linker(s_linker_state* linker_state, s_section* s1, s_symbol_table* st1, long increase);
+
+void write_all_relocations(s_linker_state* linker_state);
