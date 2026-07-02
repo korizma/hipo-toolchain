@@ -42,7 +42,7 @@ unordered_map<long, char> load_bytes_from_file_emu(string filename)
         if (addr_chars.size() != 2)
             return unordered_map<long, char>();
         
-        long address = stoi(addr_chars[0], nullptr, 16);
+        long address = stoll(addr_chars[0], nullptr, 16);
         vector<string> chars = split_string(trim_string(addr_chars[1]), ' ');
 
         for (int i = 0; i < chars.size(); i++)
