@@ -38,6 +38,9 @@ unordered_map<long, char> load_bytes_from_file_emu(string filename)
         if (line == "")
             continue;
         vector<string> addr_chars = split_string(line, ':');
+
+        if (addr_chars.size() != 2)
+            return unordered_map<long, char>();
         
         long address = stoi(addr_chars[0], nullptr, 16);
         vector<string> chars = split_string(trim_string(addr_chars[1]), ' ');
@@ -80,6 +83,11 @@ s_machine_instruction read_machine_instruction(s_emu_state* emu_state, long addr
 void emulate_file(string filename)
 {
     unordered_map<long, char> bytes = load_bytes_from_file_emu(filename);
+    if (bytes.size() == 0)
+    {
+        cout << "Failed to load hex file: " << filename << endl;
+        return;
+    }
     s_emu_state* emu_state = new_emu_state(bytes);
 
     termios oldt;

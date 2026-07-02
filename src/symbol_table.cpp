@@ -324,7 +324,6 @@ vector<s_error> _add_symbols_to_sym_table(s_symbol_table* main_table, s_symbol_t
     vector<s_error> conflicts;
     // all cases
     // for normal symbols, if they have a conflict error
-    // for section symbols, they check for existing but if it exists as section then its ok, else error
     // for extern symbols, they add them self if they dont exist, but dont change anything if it already exists
     for (s_symbol_table_entry& entry : side_table->entries)
     {
@@ -374,7 +373,8 @@ vector<s_error> _add_symbols_to_sym_table(s_symbol_table* main_table, s_symbol_t
         {
             if (existing != nullptr)
             {
-                if (existing->binding != STB_GLOBAL || existing->section_symbol_table_index != -1 || entry.offset_or_value != 0)
+                // if its not an extern symbol, error
+                if (!(existing->binding == STB_GLOBAL && existing->section_symbol_table_index == -1 && existing->offset_or_value == 0))
                 {
                     // not extern symbol
                     conflicts.push_back(new_error(ERR_SYMBOL_CONFLICT, entry.name));

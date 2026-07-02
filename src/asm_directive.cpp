@@ -39,6 +39,7 @@ s_error handle_asm_directive(s_program* program, s_asm_directive* directive)
         err = handle_word(program, directive);
         break;
     case ASM_DIR_END:
+        program->ended = true;
         err = new_no_error();
         break;
     }

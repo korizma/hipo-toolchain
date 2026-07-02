@@ -52,6 +52,8 @@ generate-parser: $(GENERATED_PARSER)
 $(ASM_TARGET): $(ASM_OBJECTS)
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 
+$(OBJ_DIR)/$(SRC_DIR)/asm_main.cpp.o: $(PARSER_H)
+
 $(LD_TARGET): $(LD_OBJECTS)
 	$(CXX) $(LDFLAGS) $^ $(LDLIBS) -o $@
 

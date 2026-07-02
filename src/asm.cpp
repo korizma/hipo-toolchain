@@ -20,6 +20,7 @@ void init_program(s_program* program, vector<s_asm_line> lines)
     program->section_list.reserve(128);
     program->symbol_table = new s_symbol_table();
     program->trampoline = new s_trampoline();
+    program->ended = false;
 }
 
 void add_instruction_to_program(vector<s_asm_line>& lines, s_asm_instruction* instruction)
@@ -118,6 +119,8 @@ bool assemble_lines(s_program* program)
             has_errors = true;
             cout << error_to_string(error) << endl;
         }
+        if (program->ended)
+            break;
     }
 
     if (has_errors)

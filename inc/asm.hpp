@@ -32,6 +32,9 @@ typedef struct s_program
     // from parser
     vector<s_asm_line> lines;
 
+    // for .end
+    bool ended;
+
     // symbol table
     s_symbol_table* symbol_table;
 

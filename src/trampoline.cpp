@@ -15,6 +15,7 @@ void add_literal_trampoline_entry(s_program* program, s_section* section, long s
     entry.referent_offset = referent_offset;
     entry.section = section;
     entry.type = TRMP_LIT;
+    entry.trampoline_location = 0;
 
     get_trampoline(program)->entries.push_back(entry);
 }
