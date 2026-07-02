@@ -62,7 +62,10 @@ void output_terminal_loop(s_emu_state* state)
         state->emu_mutex.unlock();
 
         if (character != prev)
+        {
             putc(character, stdout);
+            fflush(stdout);
+        }
         prev = character;
     }
 }

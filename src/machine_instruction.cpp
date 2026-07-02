@@ -95,8 +95,8 @@ void handle_oc_0000(s_emu_state* state, s_machine_instruction instr)
 void handle_oc_0001(s_emu_state* state, s_machine_instruction instr)
 {
     int sp = state->regs[ASM_REG_SP];
-    write_int_to_emu(state, sp - 4, state->regs[ASM_REG_PC] + 4);
-    write_int_to_emu(state, sp - 8, state->control_regs[ASM_REG_STATUS]);
+    write_int_to_emu(state, sp - 8, state->regs[ASM_REG_PC] + 4);
+    write_int_to_emu(state, sp - 4, state->control_regs[ASM_REG_STATUS]);
     state->regs[ASM_REG_SP] = sp - 8;
     state->control_regs[ASM_REG_CAUSE] = 4;
     state->control_regs[ASM_REG_STATUS] &= (~0x1);

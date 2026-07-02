@@ -56,7 +56,7 @@ vector<char> read_4_bytes_from_emu(s_emu_state* emu_state, long address)
     vector<char> bytes(4);
     for (int i = 0; i < 4; i++)
     {
-        bytes[i] = emu_state->bytes[address + i];
+        bytes[i] = emu_state->bytes[static_cast<uint32_t>(address) + i];
     }
     return bytes;
 }
@@ -66,7 +66,7 @@ int read_int_from_emu(s_emu_state* emu_state, long address)
     uint32_t value = 0;
     for (int i = 0; i < 4; i++)
     {
-        value |= (static_cast<uint32_t>(static_cast<unsigned char>(emu_state->bytes[address + i])) << (8 * i));
+        value |= (static_cast<uint32_t>(static_cast<unsigned char>(emu_state->bytes[static_cast<uint32_t>(address) + i])) << (8 * i));
     }
     return static_cast<int>(value);
 }
@@ -85,7 +85,6 @@ void emulate_file(string filename)
     termios oldt;
     disable_echo(&oldt);
 
-    thread terminal_out(output_terminal_loop, emu_state);
     thread terminal_in(input_terminal_loop, emu_state);
     thread timer(timer_loop, emu_state);
 
@@ -112,7 +111,6 @@ void emulate_file(string filename)
         emu_state->emu_mutex.unlock();
     }
 
-    terminal_out.join();
     terminal_in.detach();
     timer.join();
 
@@ -133,10 +131,16 @@ string registers_to_string(s_emu_state* emu_state)
 
 void write_int_to_emu(s_emu_state* emu_state, long address, int value)
 {
+    uint32_t addr = static_cast<uint32_t>(address);
+    if (addr == TERM_OUT) 
+    {
+        putc(value & 0xFF, stdout);
+        fflush(stdout);
+    }
     vector<char> bytes = int_to_4_bytes(value);
     for (int i = 0; i < 4; i++)
     {
-        emu_state->bytes[address + i] = bytes[i];
+        emu_state->bytes[addr + i] = bytes[i];
     }
 }
 
@@ -159,8 +163,8 @@ bool blocking_terminal_interrupts(s_emu_state* state)
 void call_interrupt_routine(s_emu_state* state, int reason)
 {
     int sp = state->regs[ASM_REG_SP];
-    write_int_to_emu(state, sp - 4, state->regs[ASM_REG_PC]);
-    write_int_to_emu(state, sp - 8, state->control_regs[ASM_REG_STATUS]);
+    write_int_to_emu(state, sp - 8, state->regs[ASM_REG_PC]);
+    write_int_to_emu(state, sp - 4, state->control_regs[ASM_REG_STATUS]);
     state->regs[ASM_REG_SP] = sp - 8;
     state->control_regs[ASM_REG_CAUSE] = reason;
     state->control_regs[ASM_REG_STATUS] = 0b111;

@@ -141,14 +141,14 @@ s_error handle_int(s_program* program, s_asm_instruction* instruction)
 
 s_error handle_iret(s_program* program, s_asm_instruction* instruction)
 {
-    // iret <=> pop status, pop pc
+    // iret <=> pop 
     // if pc was popped first then status would never be popped
     s_section* curr_section = get_current_section(program);
     s_machine_instruction machine_instr;
 
-    // pop status
+    // status <= mem[SP + 4]
     machine_instr.operation_code = 0b1001;   // oc for loading data instruction
-    machine_instr.modifier = 0b0111;        // modification for csrA <= mem32[B], B <= B + D
+    machine_instr.modifier = 0b0110;        // modification for csrA <= mem32[B + C + D]
     machine_instr.reg_a = ASM_REG_STATUS;
     machine_instr.reg_b = ASM_REG_SP;
     machine_instr.reg_c = 0;
@@ -156,13 +156,13 @@ s_error handle_iret(s_program* program, s_asm_instruction* instruction)
 
     write_machine_instr_to_section(curr_section, machine_instr);
 
-    // pop pc
+    // pc <= mem[sp], sp<= sp + 8;
     machine_instr.operation_code = 0b1001;   // oc for loading data instruction
     machine_instr.modifier = 0b0011;        // modification for A <= mem32[B], B <= B + D
     machine_instr.reg_a = ASM_REG_PC;
     machine_instr.reg_b = ASM_REG_SP;
     machine_instr.reg_c = 0;
-    machine_instr.displacement = 4;         // we add the stack size
+    machine_instr.displacement = 8;         // we add the stack size
 
     write_machine_instr_to_section(curr_section, machine_instr);
 

@@ -17,3 +17,4 @@ src/c_src/grammar.tab.h
 src/c_src/lex.yy.c
 *.bin
 *.o
+*.hex

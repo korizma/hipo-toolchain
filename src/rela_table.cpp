@@ -192,7 +192,15 @@ void update_rela_table_linker(s_linker_state* linker_state, s_section* s1, s_sym
     {
         entry.offset_in_section += increase;
         if (entry.symbol_symbol_table_index != -1)
-            entry.symbol_symbol_table_index = get_symbol_entry_index_by_symbol(get_symbol_table_linker(linker_state), get_symbol_entry_index(st1, entry.symbol_symbol_table_index)->name);
+        {
+            long old_symbol_index = entry.symbol_symbol_table_index;
+            s_symbol_table_entry* old_symbol = get_symbol_entry_index(st1, old_symbol_index);
+            bool references_current_section = old_symbol->type == STT_SECTION && old_symbol_index == s1->sym_table_index;
+
+            entry.symbol_symbol_table_index = get_symbol_entry_index_by_symbol(get_symbol_table_linker(linker_state), old_symbol->name);
+            if (references_current_section)
+                entry.addend += increase;
+        }
     }
 
     s1->rela_table->section_symbol_table_index = s1->sym_table_index;

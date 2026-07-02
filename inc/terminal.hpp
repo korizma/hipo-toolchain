@@ -13,8 +13,8 @@ int disable_echo(struct termios *old_termios);
 
 int restore_terminal(const struct termios *old_termios);
 
-#define TERM_IN 0xFFFFFF00
-#define TERM_OUT 0xFFFFFF04
+#define TERM_OUT ((uint32_t)0xFFFFFF00)
+#define TERM_IN  ((uint32_t)0xFFFFFF04)
 
 void output_terminal_loop(s_emu_state* state);
 
