@@ -4,7 +4,7 @@ YACC := bison
 
 SRC_DIR := src
 INC_DIR := inc
-GRAMMAR_DIR := grammar
+GRAMMAR_DIR := misc
 BUILD_DIR := build
 OBJ_DIR := $(BUILD_DIR)/obj
 
