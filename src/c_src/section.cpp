@@ -177,7 +177,7 @@ bool _space_is_free(vector<pair<long, long>> occupied_slots, long place, long si
     for (pair<long, long> slot : occupied_slots)
     {
         long slot_start = slot.first;
-        long slot_end = slot.second;
+        long slot_end = slot.second + slot.first;
 
         if (place >= slot_start && place < slot_end)
             return false;
@@ -197,11 +197,10 @@ long _find_place(vector<pair<long, long>> occupied_slots, long size)
 
     for (pair<long, long> place_size : occupied_slots)
     {
-        if (place_size.first > place + size)
+        if (place < place_size.first + place_size.second)
         {
-            return place;
+            place = place_size.first + place_size.second;
         }
-        place = place_size.first + place_size.second;
     }
     return place;
 }
@@ -256,11 +255,7 @@ string section_to_linked_string(s_section* section)
 
     if (place % 8 != 0)
     {
-        final_string += "\n" + long_to_string_hex(place - place%8) + ": ";
-        for (long i = 0; i < place%8; i++)
-        {
-            final_string += "00 ";
-        }
+        final_string += "\n" + long_to_string_hex(place) + ": ";
     }
 
     for (char c : section->bytes)

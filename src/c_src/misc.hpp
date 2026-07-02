@@ -30,4 +30,11 @@ string long_to_string_hex(long x);
 
 vector<string> split_string(const string& text, char delimiter);
 
+string trim_string(string text);
+
 char string_hex_to_char(string hex);
+
+
+string read_all_text(const string& filename);
+
+string int_to_string_hex(int number);

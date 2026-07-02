@@ -28,6 +28,7 @@ void add_symbol_trampoline_entry(s_program* program, s_section* section, long se
     entry.section = section;
     entry.type = TRMP_SYM;
     entry.symbol_symbol_table_index = symbol_index;
+    entry.trampoline_location = 0;
 
     get_trampoline(program)->entries.push_back(entry);
 }
@@ -64,13 +65,7 @@ s_error write_trampoline_entry(s_program* program, s_trampoline_entry* entry)
 
         s_symbol_table_entry* symbol = get_symbol_entry_index(get_symbol_table(program), entry->symbol_symbol_table_index);
 
-        if (long_fits_in_12bits(symbol->offset_or_value) && symbol->expression != 0)
-        {
-            write_to_lower_12b(entry->section->bytes, entry->section_offset, symbol->offset_or_value);
-
-        }
-        else
-        {
+        
             long trampoline_location = get_trampoline_location_if_exists_symbol(program, entry->symbol_symbol_table_index);
 
             if (trampoline_location != -1)
@@ -80,17 +75,23 @@ s_error write_trampoline_entry(s_program* program, s_trampoline_entry* entry)
             else
             {
                 entry->trampoline_location = get_section_offset(entry->section);
+                skip_bytes_in_section(entry->section, 4);
                 if (symbol->binding == STB_GLOBAL)
                 {
-                    create_new_rela_table_entry(entry->section, 0, 0, R_HIPO_32, entry->symbol_symbol_table_index);
+                    create_new_rela_table_entry(entry->section, 0, entry->trampoline_location, R_HIPO_32, entry->symbol_symbol_table_index);
                 }
                 else if (symbol->binding == STB_LOCAL)
                 {
-                    create_new_rela_table_entry(entry->section, 0, symbol->offset_or_value, R_HIPO_32, symbol->section_symbol_table_index);
+                    create_new_rela_table_entry(
+                        entry->section,
+                        symbol->offset_or_value,
+                        entry->trampoline_location,
+                        R_HIPO_32,
+                        symbol->section_symbol_table_index
+                    );    
                 }
             }
 
-            skip_bytes_in_section(entry->section, 4);
 
             int displacement = entry->trampoline_location - entry->referent_offset;
 
@@ -102,7 +103,7 @@ s_error write_trampoline_entry(s_program* program, s_trampoline_entry* entry)
             write_to_lower_12b(entry->section->bytes, entry->section_offset, displacement);
 
             return new_no_error();
-        }
+        
 
         return new_no_error();
     }
@@ -115,7 +116,7 @@ vector<s_error> write_trampolines(s_program* program)
     s_trampoline* trampoline = get_trampoline(program);
     vector<s_error> errors;
 
-    for (s_trampoline_entry entry : trampoline->entries)
+    for (s_trampoline_entry& entry : trampoline->entries)
     {
         s_error error = write_trampoline_entry(program, &entry);
         if (!error.no_error)

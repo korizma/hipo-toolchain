@@ -1,5 +1,6 @@
 #include "misc.hpp"
 #include <sstream>
+#include <fstream>
 
 
 using namespace std;
@@ -40,9 +41,10 @@ vector<char> int_to_4_bytes(int x)
 // .. XX LL HX XX
 void write_to_lower_12b(vector<char>& mem, long offset, int value_12bit)
 {
-    mem[offset] = (char)(value_12bit & 0xFF);
-    mem[offset + 1] &= 0xF0;
-    mem[offset + 1] |= (char)((value_12bit >> 8) & 0x0F);
+    int value = value_12bit & 0xFFF;
+    mem[offset] &= 0xF0;
+    mem[offset] |= (char)(value & 0x0F);
+    mem[offset + 1] = (char)((value >> 4) & 0xFF);
 }
 
 bool long_fits_in_12bits(long x)
@@ -85,6 +87,16 @@ vector<string> split_string(const string& text, char delimiter) {
     return parts;
 }
 
+string trim_string(string text)
+{
+    size_t start = text.find_first_not_of(" \t\r\n");
+    if (start == string::npos)
+        return "";
+
+    size_t end = text.find_last_not_of(" \t\r\n");
+    return text.substr(start, end - start + 1);
+}
+
 
 char string_hex_to_char(string hex)
 {
@@ -95,6 +107,32 @@ char string_hex_to_char(string hex)
         char c = hex[i];
         int value = hex_chars.find(c);
         result = (result << 4) | value;
+    }
+    return result;
+}
+
+
+string read_all_text(const string& filename)
+{
+    ifstream file(filename);
+    if (!file)
+        return "";
+
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    return buffer.str();
+}
+
+
+string int_to_string_hex(int number)
+{
+    string hex_chars = "0123456789ABCDEF";
+    string result = "0x";
+    for (int i = 3; i >= 0; i--)
+    {
+        char byte = (number >> (i * 8)) & 0xFF;
+        result += hex_chars[(byte >> 4) & 0x0F];
+        result += hex_chars[byte & 0x0F];
     }
     return result;
 }

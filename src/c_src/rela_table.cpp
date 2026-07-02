@@ -120,8 +120,7 @@ void rela_table_symbol_update(s_symbol_table* symbol_table, vector<s_section>& s
 
             if (symbol->binding == STB_LOCAL && entry->symbol_symbol_table_index == symbol_index)
             {
-                entry->addend = 0;
-                entry->offset_in_section = symbol->offset_or_value;
+                entry->addend = symbol->offset_or_value;
                 entry->symbol_symbol_table_index = symbol->section_symbol_table_index;
             }
         }

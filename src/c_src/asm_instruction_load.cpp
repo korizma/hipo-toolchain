@@ -177,7 +177,7 @@ s_error _handle_ld_mem_sym(s_program* program, s_asm_instruction* instruction)
     long section_offset = get_section_offset(curr_section);
 
     machine_instr.operation_code = 0b1001;     // oc for storing data
-    machine_instr.modifier = 0b0001;         // modification for A <= B + disp
+    machine_instr.modifier = 0b0010;         // modification for A <= mem[B + C + disp]
     machine_instr.reg_a = instruction->reg1;
     machine_instr.reg_b = ASM_REG_PC;
     machine_instr.reg_c = 0;

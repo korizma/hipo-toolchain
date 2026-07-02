@@ -10,17 +10,6 @@
 using namespace std;
 
 
-string read_all_text(const string& filename)
-{
-    ifstream file(filename);
-    if (!file)
-        return "";
-
-    std::ostringstream buffer;
-    buffer << file.rdbuf();
-    return buffer.str();
-}
-
 // loads the file, and adds all section names to the symbol table
 s_object_file* load_object_file(s_linker_state* state, string filename)
 {
