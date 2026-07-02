@@ -107,7 +107,13 @@ void emulate_file(string filename)
 
         long pc = emu_state->regs[ASM_REG_PC];
         s_machine_instruction instr = read_machine_instruction(emu_state, pc);
-        execute_machine_instr(emu_state, instr);
+        bool success = execute_machine_instr(emu_state, instr);
+
+        if (!success)
+        {
+            call_interrupt_routine(emu_state, 1);
+        }
+
         emu_state->emu_mutex.unlock();
     }
 
