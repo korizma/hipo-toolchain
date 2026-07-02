@@ -49,7 +49,7 @@ s_rela_table_entry* create_new_rela_table_entry(s_section* section, long addend,
 
 string rela_table_entry_to_string(s_rela_table_entry entry)
 {
-    string offset = long_to_string_hex(entry.offset_in_section);
+    string offset = int_to_string_hex(entry.offset_in_section);
     string type;
     if (entry.relocation_type == R_HIPO_12)
         type = "R_HIPO_12";

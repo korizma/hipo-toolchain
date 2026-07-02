@@ -255,14 +255,14 @@ string section_to_linked_string(s_section* section)
 
     if (place % 8 != 0)
     {
-        final_string += "\n" + long_to_string_hex(place) + ": ";
+        final_string += "\n" + int_to_string_hex(place) + ": ";
     }
 
     for (char c : section->bytes)
     {
         string hex = char_to_string_hex(c);
         if (place % 8 == 0)
-            final_string += "\n" + long_to_string_hex(place) + ": ";
+            final_string += "\n" + int_to_string_hex(place) + ": ";
         final_string += hex + " ";
         place++;
     }
