@@ -130,6 +130,8 @@ void emulate_file(string filename)
 
     restore_terminal(&oldt);
 
+    cout << "\nEmulated processor executed halt instruction." << endl;
+    cout << "Emulated processor state:" << endl;
     cout << registers_to_string(emu_state);
 }
 
