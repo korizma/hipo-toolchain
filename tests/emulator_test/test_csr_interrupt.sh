@@ -10,6 +10,6 @@ assert_reg 5 0x00000004
 assert_reg 6 0x000000FE
 assert_reg 7 0x000006F8
 assert_reg 10 0x00000000
-assert_reg 11 0x00000000
+assert_reg 11 0x000006AD
 
 pass "emulator csr and interrupt"

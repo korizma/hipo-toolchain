@@ -2,6 +2,9 @@
 
 .section text
 start:
+    ld $noop_interrupt_handler, %r1
+    csrwr %r1, %handler
+
     ld $0x700, %sp
     ld $0x10, %r1
     ld $0x20, %r2
@@ -15,5 +18,7 @@ start:
     ld %sp, %r7
     halt
 
-.end
+noop_interrupt_handler:
+    iret
 
+.end

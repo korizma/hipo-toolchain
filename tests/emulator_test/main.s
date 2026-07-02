@@ -2,6 +2,9 @@
 
 .section text
 start:
+    ld $noop_interrupt_handler, %r1
+    csrwr %r1, %handler
+
     # Stack setup for push/pop and call/ret checks.
     ld $0x700, %sp
 
@@ -65,5 +68,8 @@ add_three:
 done:
     ld $0x55, %r7
     halt
+
+noop_interrupt_handler:
+    iret
 
 .end

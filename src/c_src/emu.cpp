@@ -4,6 +4,10 @@
 #include "misc.hpp"
 #include <cstdint>
 #include <iostream>
+#include <thread>
+#include "terminal.hpp"
+#include "timer.hpp"
+#include <termios.h>
 
 using namespace std;
 
@@ -15,6 +19,8 @@ s_emu_state* new_emu_state(unordered_map<long, char> bytes)
     state->regs[ASM_REG_PC] = ENTRY_LOCATION;
     state->running = true;
     state->control_regs = vector<int>(CONTROL_REG_NUMBER, 0);
+    state->term_in_interrupt = false;
+    state->timer_interrupt = false;
     return state;
 }
 
@@ -76,12 +82,41 @@ void emulate_file(string filename)
     unordered_map<long, char> bytes = load_bytes_from_file_emu(filename);
     s_emu_state* emu_state = new_emu_state(bytes);
 
+    termios oldt;
+    disable_echo(&oldt);
+
+    thread terminal_out(output_terminal_loop, emu_state);
+    thread terminal_in(input_terminal_loop, emu_state);
+    thread timer(timer_loop, emu_state);
+
     while (emu_state->running)
     {
+        emu_state->emu_mutex.lock();
+        if (!blocking_all_interrupts(emu_state))
+        {
+            if (!blocking_terminal_interrupts(emu_state) && emu_state->term_in_interrupt)
+            {
+                call_interrupt_routine(emu_state, 3);
+                emu_state->term_in_interrupt = false;
+            }
+            else if (!blocking_timer_interrupts(emu_state) && emu_state->timer_interrupt)
+            {
+                call_interrupt_routine(emu_state, 2);
+                emu_state->timer_interrupt = false;
+            }
+        }
+
         long pc = emu_state->regs[ASM_REG_PC];
         s_machine_instruction instr = read_machine_instruction(emu_state, pc);
         execute_machine_instr(emu_state, instr);
+        emu_state->emu_mutex.unlock();
     }
+
+    terminal_out.join();
+    terminal_in.detach();
+    timer.join();
+
+    restore_terminal(&oldt);
 
     cout << registers_to_string(emu_state);
 }
@@ -103,4 +138,31 @@ void write_int_to_emu(s_emu_state* emu_state, long address, int value)
     {
         emu_state->bytes[address + i] = bytes[i];
     }
+}
+
+
+bool blocking_all_interrupts(s_emu_state* state)
+{
+    return (state->control_regs[ASM_REG_STATUS] & 0b100) != 0;
+}
+
+bool blocking_timer_interrupts(s_emu_state* state)
+{
+    return (state->control_regs[ASM_REG_STATUS] & 0b001) != 0;
+}
+ 
+bool blocking_terminal_interrupts(s_emu_state* state)
+{
+    return (state->control_regs[ASM_REG_STATUS] & 0b010) != 0;
+}
+
+void call_interrupt_routine(s_emu_state* state, int reason)
+{
+    int sp = state->regs[ASM_REG_SP];
+    write_int_to_emu(state, sp - 4, state->regs[ASM_REG_PC]);
+    write_int_to_emu(state, sp - 8, state->control_regs[ASM_REG_STATUS]);
+    state->regs[ASM_REG_SP] = sp - 8;
+    state->control_regs[ASM_REG_CAUSE] = reason;
+    state->control_regs[ASM_REG_STATUS] = 0b111;
+    state->regs[ASM_REG_PC] = state->control_regs[ASM_REG_HANDLER];
 }

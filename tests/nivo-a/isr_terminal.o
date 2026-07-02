@@ -1,0 +1,6 @@
+#.symtab
+Num	Value	Size	Type	Bind	Ndx	Name
+0:	0	4	SCTN	LOC	0	isr
+1:	0	0	NOTYP	GLOB	0	isr_terminal
+#isr
+93 FE 04 00 

@@ -101,7 +101,6 @@ void handle_oc_0001(s_emu_state* state, s_machine_instruction instr)
     state->control_regs[ASM_REG_CAUSE] = 4;
     state->control_regs[ASM_REG_STATUS] &= (~0x1);
     state->regs[ASM_REG_PC] = state->control_regs[ASM_REG_HANDLER];
-    state->regs[ASM_REG_PC] += 4;
 }
 
 void handle_oc_0010(s_emu_state* state, s_machine_instruction instr)

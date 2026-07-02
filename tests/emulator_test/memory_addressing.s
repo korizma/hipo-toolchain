@@ -2,6 +2,9 @@
 
 .section text
 start:
+    ld $noop_interrupt_handler, %r1
+    csrwr %r1, %handler
+
     ld $0x123, %r1
     st %r1, 0x300
     ld 0x300, %r2
@@ -20,6 +23,9 @@ start:
     st %r2, data_word
     ld data_word, %r10
     halt
+
+noop_interrupt_handler:
+    iret
 
 data_word:
     .word 0x55
